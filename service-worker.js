@@ -1,14 +1,15 @@
 /**
  * ============================================================
  *  NTIC BIBLE PROJECTOR — SERVICE WORKER
- *  Version : 1.0.0  |  Cache : bible-projector-v3
+ *  Version : 1.0.0  |  Cache : bible-projector-v4
  *  Stratégie : Cache-First → Network Fallback → Offline Page
- *  Mise à jour US-06 : CACHE_VERSION 'v2' → 'v3'
+ *  Mise à jour US-07 : CACHE_VERSION 'v3' → 'v4'
+ *  Correctif B-02 : Logo NTIC officiel (icons/) + favicon
  * ============================================================
  */
 
 // ── Configuration ──────────────────────────────────────────
-const CACHE_VERSION = 'v3'; // US-06 : onglet Favoris
+const CACHE_VERSION = 'v4'; // US-07 / B-02 : logo NTIC Makabandilou
 const CACHE_NAME    = `bible-projector-${CACHE_VERSION}`;
 
 /**
@@ -24,10 +25,9 @@ const URLS_TO_CACHE = [
   './offline.html',
   './projection.html',
   './manifest.json',
-  './assets/icons/icon-192x192.png',
-  './assets/icons/icon-512x512.png',
-  './assets/icons/favicon.ico',
-  './assets/icons/apple-touch-icon.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/favicon.ico',
 ];
 
 /** Page de fallback HTML pour les navigations hors ligne. */

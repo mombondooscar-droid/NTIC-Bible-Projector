@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
@@ -15,20 +16,20 @@
   ══════════════════════════════════════════════════ -->
   <link rel="manifest" href="./manifest.json">
 
-  <!-- Favicon multi-format -->
-  <link rel="icon" type="image/x-icon"  href="./assets/icons/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-192x192.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192x192.png">
+  <!-- Favicon multi-format — NTIC Makabandilou (pains & poissons) -->
+  <link rel="icon" type="image/x-icon"  href="./icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32"  href="./icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 
   <!-- iOS / macOS -->
-  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BibleProj">
 
   <!-- Windows tiles -->
   <meta name="msapplication-TileColor" content="#0a0e1a">
-  <meta name="msapplication-TileImage" content="./assets/icons/icon-192x192.png">
+  <meta name="msapplication-TileImage" content="./icons/icon-192.png">
 
   <!-- ══════════════════════════════════════════════════
        Open Graph (partage réseaux sociaux)
@@ -36,7 +37,7 @@
   <meta property="og:type"        content="website">
   <meta property="og:title"       content="NTIC Bible Projector">
   <meta property="og:description" content="Application PWA de projection biblique — NTIC Makabandilou">
-  <meta property="og:image"       content="./assets/icons/icon-512x512.png">
+  <meta property="og:image"       content="./icons/icon-512.png">
 
   <!-- ══════════════════════════════════════════════════
        FEUILLE DE STYLE PRINCIPALE
@@ -53,19 +54,8 @@
        Masqué par app.js une fois l'app prête.
   ══════════════════════════════════════════════════ -->
   <div id="sw-loading-overlay" role="status" aria-live="polite" aria-label="Initialisation en cours">
-    <!-- Logo animé -->
-    <svg class="header-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
-      <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-            font-family="serif" font-size="18" font-weight="bold" fill="white">✝</text>
-      <defs>
-        <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
-          <stop offset="0%"   stop-color="#0a2f8b"/>
-          <stop offset="60%"  stop-color="#2347d1"/>
-          <stop offset="100%" stop-color="#d6009d"/>
-        </linearGradient>
-      </defs>
-    </svg>
+    <!-- Logo NTIC Makabandilou — pains & poissons -->
+    <img src="./icons/icon-192.png" alt="NTIC" class="header-logo" width="36" height="36">
 
     <div class="sw-progress-bar" aria-hidden="true">
       <div class="sw-progress-fill"></div>
@@ -80,18 +70,7 @@
   <header role="banner">
     <!-- Groupe : logo + titre -->
     <div class="header-brand">
-      <svg class="header-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="32" height="32" rx="8" fill="url(#logo-grad-h)"/>
-        <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-              font-family="serif" font-size="18" font-weight="bold" fill="white">✝</text>
-        <defs>
-          <linearGradient id="logo-grad-h" x1="0" y1="0" x2="32" y2="32">
-            <stop offset="0%"   stop-color="#0a2f8b"/>
-            <stop offset="60%"  stop-color="#2347d1"/>
-            <stop offset="100%" stop-color="#d6009d"/>
-          </linearGradient>
-        </defs>
-      </svg>
+      <img src="./icons/icon-192.png" alt="NTIC" class="header-logo" width="36" height="36">
 
       <span class="header-title">NTIC Bible Projector</span>
       <span class="header-version" aria-label="Version Sprint 1">v1.0-sp1</span>
@@ -116,6 +95,12 @@
         title="Ouvrir la fenêtre de projection (1920×1080)"
         style="font-size:0.78rem; padding:0.3rem 0.75rem;"
       >🖥 Projection</button>
+
+      <!-- Bouton Aperçu projection (Picture-in-Picture) -->
+      <button
+        id="btn-pip"
+        class="btn btn-ghost btn-sm"
+        title="Afficher/masquer l'aperçu de projection">📹</button>
     </div>
   </header>
 
@@ -232,6 +217,18 @@
       <button class="btn btn-primary btn-sm" id="btn-update-now">Mettre à jour</button>
       <button class="btn btn-ghost btn-sm" id="btn-update-dismiss" aria-label="Ignorer la mise à jour">✕</button>
     </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       PICTURE-IN-PICTURE PREVIEW (miroir de projection)
+  ══════════════════════════════════════════════════ -->
+  <div id="pip-preview" class="pip-hidden">
+    <div class="pip-topbar">
+      <span>🎥 Aperçu projection</span>
+      <button id="pip-close" class="pip-close" aria-label="Fermer l'aperçu">×</button>
+    </div>
+    <div id="pip-content" class="pip-content"></div>
   </div>
 
 

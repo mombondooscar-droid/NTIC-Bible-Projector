@@ -26,6 +26,7 @@
       --song-text: #ffffff;
       --song-font: 'Arial', sans-serif;
       --song-size: 70px;
+      --song-text-align: center; /* US-13 : alignement du texte */
 
       --p-name-size:  30px;
       --p-title-size: 24px;
@@ -312,7 +313,15 @@
 
     .song-title  { font-size: .65em; font-weight: 700; margin-bottom: .3em; opacity: .85; letter-spacing: .05em; text-transform: uppercase; }
     .song-author { font-size: .5em; opacity: .6; margin-bottom: .8em; font-style: italic; }
-    .song-lyric  { font-size: 1em; font-weight: 400; overflow-wrap: break-word; word-break: break-word; max-width: 85vw; hyphens: auto; }
+    .song-lyric  {
+      font-size: 1em;
+      font-weight: 400;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      max-width: 85vw;
+      hyphens: auto;
+      text-align: var(--song-text-align, center); /* US-13 : alignement configurable */
+    }
 
     @keyframes song-fade-in {
       0%   { opacity: 0; transform: translateY(8px); }
@@ -782,6 +791,7 @@
         if (settings.textColor)  r.style.setProperty('--song-text', settings.textColor);
         if (settings.fontFamily) r.style.setProperty('--song-font', `'${settings.fontFamily}', sans-serif`);
         if (settings.fontSize)   r.style.setProperty('--song-size', `${settings.fontSize}px`);
+        if (settings.textAlign)  r.style.setProperty('--song-text-align', settings.textAlign); // US-13
       }
     }
 
