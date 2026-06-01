@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <!-- ══════════════════════════════════════════════════
+       META FONDAMENTAUX
+  ══════════════════════════════════════════════════ -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Application PWA de projection biblique — Gestion des versets, chants et lower thirds. NTIC Makabandilou.">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="color-scheme" content="dark">
+
+  <!-- ══════════════════════════════════════════════════
+       PWA MANIFEST & ICONS
+  ══════════════════════════════════════════════════ -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Favicon multi-format -->
+  <link rel="icon" type="image/x-icon"  href="./assets/icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192x192.png">
+
+  <!-- iOS / macOS -->
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BibleProj">
+
+  <!-- Windows tiles -->
+  <meta name="msapplication-TileColor" content="#0a0e1a">
+  <meta name="msapplication-TileImage" content="./assets/icons/icon-192x192.png">
+
+  <!-- ══════════════════════════════════════════════════
+       Open Graph (partage réseaux sociaux)
+  ══════════════════════════════════════════════════ -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="NTIC Bible Projector">
+  <meta property="og:description" content="Application PWA de projection biblique — NTIC Makabandilou">
+  <meta property="og:image"       content="./assets/icons/icon-512x512.png">
+
+  <!-- ══════════════════════════════════════════════════
+       FEUILLE DE STYLE PRINCIPALE
+  ══════════════════════════════════════════════════ -->
+  <link rel="stylesheet" href="./style.css">
+
+  <title>NTIC Bible Projector</title>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════
+       OVERLAY DE CHARGEMENT INITIAL (Service Worker)
+       Masqué par app.js une fois l'app prête.
+  ══════════════════════════════════════════════════ -->
+  <div id="sw-loading-overlay" role="status" aria-live="polite" aria-label="Initialisation en cours">
+    <!-- Logo animé -->
+    <svg class="header-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+      <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+            font-family="serif" font-size="18" font-weight="bold" fill="white">✝</text>
+      <defs>
+        <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+          <stop offset="0%"   stop-color="#0a2f8b"/>
+          <stop offset="60%"  stop-color="#2347d1"/>
+          <stop offset="100%" stop-color="#d6009d"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div class="sw-progress-bar" aria-hidden="true">
+      <div class="sw-progress-fill"></div>
+    </div>
+    <p class="sw-loading-text">Initialisation…</p>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       HEADER — En-tête fixe
+  ══════════════════════════════════════════════════ -->
+  <header role="banner">
+    <!-- Groupe : logo + titre -->
+    <div class="header-brand">
+      <svg class="header-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="url(#logo-grad-h)"/>
+        <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+              font-family="serif" font-size="18" font-weight="bold" fill="white">✝</text>
+        <defs>
+          <linearGradient id="logo-grad-h" x1="0" y1="0" x2="32" y2="32">
+            <stop offset="0%"   stop-color="#0a2f8b"/>
+            <stop offset="60%"  stop-color="#2347d1"/>
+            <stop offset="100%" stop-color="#d6009d"/>
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <span class="header-title">NTIC Bible Projector</span>
+      <span class="header-version" aria-label="Version Sprint 1">v1.0-sp1</span>
+    </div>
+
+    <!-- Groupe : indicateurs droite -->
+    <div class="header-right">
+      <!-- Indicateur Online / Offline -->
+      <span
+        id="status-indicator"
+        class="online"
+        role="status"
+        aria-live="polite"
+        aria-label="Statut réseau : en ligne"
+      >En ligne</span>
+
+      <!-- Bouton ouverture fenêtre de projection (US-05) -->
+      <button
+        id="btn-open-projection"
+        class="btn btn-primary btn-sm"
+        aria-label="Ouvrir la fenêtre de projection 1920×1080"
+        title="Ouvrir la fenêtre de projection (1920×1080)"
+        style="font-size:0.78rem; padding:0.3rem 0.75rem;"
+      >🖥 Projection</button>
+    </div>
+  </header>
+
+
+  <!-- ══════════════════════════════════════════════════
+       NAV — Barre d'onglets principale
+       Les boutons utilisent data-tab pour le routing JS.
+       Pas de onclick inline — addEventListener dans app.js.
+  ══════════════════════════════════════════════════ -->
+  <nav class="tabs" role="tablist" aria-label="Navigation principale">
+
+    <button
+      class="tab active"
+      role="tab"
+      aria-selected="true"
+      aria-controls="panel-bible"
+      id="tab-bible"
+      data-tab="bible"
+    >
+      <span class="tab-icon" aria-hidden="true">📖</span>
+      <span class="tab-label">Bible</span>
+    </button>
+
+    <button
+      class="tab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="panel-favorites"
+      id="tab-favorites"
+      data-tab="favorites"
+    >
+      <span class="tab-icon" aria-hidden="true">⭐</span>
+      <span class="tab-label">Favoris</span>
+    </button>
+
+    <button
+      class="tab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="panel-songs"
+      id="tab-songs"
+      data-tab="songs"
+    >
+      <span class="tab-icon" aria-hidden="true">🎵</span>
+      <span class="tab-label">Chants</span>
+    </button>
+
+    <button
+      class="tab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="panel-lower-third"
+      id="tab-lower-third"
+      data-tab="lower-third"
+    >
+      <span class="tab-icon" aria-hidden="true">🎙</span>
+      <span class="tab-label">Lower Third</span>
+    </button>
+
+    <button
+      class="tab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="panel-settings"
+      id="tab-settings"
+      data-tab="settings"
+    >
+      <span class="tab-icon" aria-hidden="true">⚙️</span>
+      <span class="tab-label">Paramètres</span>
+    </button>
+
+  </nav>
+
+
+  <!-- ══════════════════════════════════════════════════
+       MAIN — Zone de contenu dynamique
+       Rempli par app.js selon l'onglet actif.
+  ══════════════════════════════════════════════════ -->
+  <main id="app" role="main" aria-label="Contenu principal">
+    <!-- app.js injecte ici le panneau de l'onglet actif -->
+  </main>
+
+
+  <!-- ══════════════════════════════════════════════════
+       FOOTER — Barre de statut inférieure
+  ══════════════════════════════════════════════════ -->
+  <footer role="contentinfo">
+    <div class="footer-left">
+      <span>© 2025 NTIC Makabandilou</span>
+      <span aria-hidden="true">·</span>
+      <span>Sprint 1 — US-01</span>
+    </div>
+    <div class="footer-right" id="footer-version" aria-label="Informations techniques">
+      PWA · Service Worker
+    </div>
+  </footer>
+
+
+  <!-- ══════════════════════════════════════════════════
+       TOAST — Notification de mise à jour PWA
+       Affiché par app.js quand un nouveau SW attend.
+  ══════════════════════════════════════════════════ -->
+  <div
+    id="update-toast"
+    class="hidden"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <span class="toast-text">
+      🔄 Une mise à jour est disponible
+    </span>
+    <div class="toast-actions">
+      <button class="btn btn-primary btn-sm" id="btn-update-now">Mettre à jour</button>
+      <button class="btn btn-ghost btn-sm" id="btn-update-dismiss" aria-label="Ignorer la mise à jour">✕</button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SCRIPT PRINCIPAL — chargé en dernier (defer implicite)
+  ══════════════════════════════════════════════════ -->
+  <script src="./db.js"></script>
+  <script src="./app.js"></script>
+
+</body>
+</html>

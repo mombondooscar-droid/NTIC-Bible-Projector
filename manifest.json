@@ -1,0 +1,70 @@
+{
+  "name": "NTIC Bible Projector",
+  "short_name": "BibleProj",
+  "description": "Application de projection biblique avec gestion des chants, versets et lower thirds — NTIC Makabandilou",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0a0e1a",
+  "background_color": "#0a0e1a",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "utilities", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "./assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "NTIC Bible Projector — Onglet Bible"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Bible",
+      "short_name": "Bible",
+      "description": "Accéder à la navigation biblique",
+      "url": "./index.html?tab=bible",
+      "icons": [{ "src": "./assets/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Chants",
+      "short_name": "Chants",
+      "description": "Gérer les chants",
+      "url": "./index.html?tab=songs",
+      "icons": [{ "src": "./assets/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
