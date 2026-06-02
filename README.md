@@ -1,7 +1,7 @@
 # NTIC Bible Projector — PWA
 ## NTIC Makabandilou · Version 1.0-sp12
 
-> Application PWA offline-first de projection biblique pour la régie de diffusion de l'ICC (Impact Centre Chrétien makabandilou ).  
+> Application PWA offline-first de projection biblique pour la régie de diffusion de l'ICC (Impact Centre Chrétien).  
 > Convertie depuis la base Python/Tkinter `fc16b.py` (v28.6) · 5 onglets · projection 1920×1080 · Lower Third broadcast.
 
 ---
