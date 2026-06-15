@@ -1,0 +1,352 @@
+/* ============================================================
+   NTIC BIBLE PROJECTOR — styles/base.css
+   BASE — Variables, reset, header, nav, main, footer
+   US-R10 — Sprint R3 : extrait de style.css (split modulaire)
+   ============================================================ */
+
+/* style.css (version complète avec ajouts PIP + carte verset cliquable + mode slide) */
+
+/* ============================================================
+   NTIC BIBLE PROJECTOR — style.css
+   Version : 1.0-sp13  |  Sprint : US-13 (Clic direct verset + Mode slide)
+   + US-UX06 R#05 : alignement gauche textes longs
+   + US-UX06 R#07 : polices DM Sans / Syne
+   Police  : DM Sans (UI) / Syne (titres) + fallback system-ui
+   Thème   : Dark UI, variables CSS
+   ============================================================ */
+
+/* ── Google Fonts (non bloquant en offline grâce au SW) ─────── */
+/* Les liens sont dans index.html, ici seulement les variables */
+
+/* ────────────────────────────────────────────────────────────
+   VARIABLES / DESIGN TOKENS
+   ──────────────────────────────────────────────────────────── */
+:root {
+  /* ---- US-UX05 : Palette 4 couleurs (R#17 + R#06) ---- */
+  /* Neutres (60%) */
+  --bg:          #0a0e1a;
+  --bg-card:     #10182b;
+
+  /* Primaire (30%) */
+  --primary:       #2347d1;
+  --primary-hover: #1a38b8;
+
+  /* Accent unique (10%) — désaturé */
+  --accent:      #a033b5;
+  --accent-hover: #882ba3;
+  --accent-glow:  rgba(160, 51, 181, 0.35);
+
+  /* Sémantiques — hors palette principale */
+  --danger:   #e05050;
+  --success:  #2ea86b;
+  --warning:  #d4a020;
+
+  /* Texte & bordures */
+  --text:        #e8eaf0;
+  --text-muted:  #8892a4;
+  --text-dim:    #5a6275;
+  --border:      rgba(255, 255, 255, 0.07);
+  --border-mid:  rgba(255, 255, 255, 0.12);
+
+  /* Dérivés UI */
+  --bg-card-hover: #161e30;
+  --bg-input:      #0d1424;
+
+  /* Mise en page */
+  --header-h:        56px;
+  --nav-h:           52px;
+  --footer-h:        36px;
+  --radius:          16px;
+  --radius-sm:       10px;
+  --radius-xs:       6px;
+
+  /* Ombres */
+  --shadow-card:     0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-sm:       0 2px 8px rgba(0, 0, 0, 0.3);
+
+  /* Transitions */
+  --t-fast:          0.12s ease;
+  --t-med:           0.22s ease;
+
+  /* Typographie — R#07 */
+  --font-ui:      'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-heading: 'Syne', 'Arial Black', sans-serif;
+  --font-mono:       'Consolas', 'Courier New', monospace;
+}
+
+/* ────────────────────────────────────────────────────────────
+   RESET & BASE
+   ──────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  margin:     0;
+  padding:    0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size:        16px;
+  scroll-behavior:  smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family:     var(--font-ui);
+  background:      var(--bg);
+  color:           var(--text);
+  line-height:     1.5;
+  overflow-x:      hidden;
+  /* Disposition : header + nav + main + footer (sticky) */
+  display:         flex;
+  flex-direction:  column;
+  min-height:      100dvh;
+}
+
+/* Scrollbar custom */
+::-webkit-scrollbar              { width: 4px; height: 4px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: rgba(255,255,255,.15); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(255,255,255,.28); }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent; }
+
+/* Focus visible accessible */
+:focus-visible {
+  outline:        2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius:  4px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   OVERLAY DE CHARGEMENT (US-01)
+   ──────────────────────────────────────────────────────────── */
+#sw-loading-overlay {
+  position:        fixed;
+  inset:           0;
+  z-index:         9999;
+  background:      var(--bg);
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+}
+
+.sw-progress-bar {
+  width:        200px;
+  height:       3px;
+  background:   rgba(255,255,255,.1);
+  border-radius: 2px;
+  overflow:     hidden;
+}
+
+.sw-progress-fill {
+  height:     100%;
+  background: linear-gradient(90deg, #0a2f8b, #2347d1, #d6009d);
+  border-radius: 2px;
+  animation:  progress-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes progress-sweep {
+  0%   { width: 20%; margin-left: 0; }
+  50%  { width: 55%; margin-left: 25%; }
+  100% { width: 20%; margin-left: 80%; }
+}
+
+.sw-loading-text {
+  color:       var(--text-muted);
+  font-size:   0.8rem;
+  letter-spacing: 0.08em;
+}
+
+/* ────────────────────────────────────────────────────────────
+   HEADER
+   ──────────────────────────────────────────────────────────── */
+header {
+  position:         sticky;
+  top:              0;
+  z-index:          100;
+  height:           var(--header-h);
+  background:       rgba(10, 14, 26, 0.92);
+  backdrop-filter:  blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom:    1px solid var(--border);
+  display:          flex;
+  align-items:      center;
+  justify-content:  space-between;
+  padding:          0 16px;
+  gap:              12px;
+  flex-shrink:      0;
+}
+
+.header-brand {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  min-width:   0;
+}
+
+.header-logo {
+  width:        36px;
+  height:       36px;
+  flex-shrink:  0;
+  border-radius: 50%;
+  object-fit:   cover;
+}
+
+.header-title {
+  font-size:    0.9rem;
+  font-weight:  700;
+  white-space:  nowrap;
+  overflow:     hidden;
+  text-overflow:ellipsis;
+  letter-spacing: -0.01em;
+  font-family:  var(--font-heading);
+}
+
+.header-version {
+  font-size:   0.68rem;
+  color:       var(--text-muted);
+  background:  rgba(255,255,255,.07);
+  padding:     2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.header-right {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  flex-shrink: 0;
+}
+
+/* Indicateur réseau */
+#status-indicator {
+  font-size:   0.72rem;
+  font-weight: 600;
+  padding:     3px 8px;
+  border-radius: 20px;
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  white-space: nowrap;
+}
+
+#status-indicator::before {
+  content:     '';
+  width:       7px;
+  height:      7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition:  background var(--t-med), box-shadow var(--t-med);
+}
+
+#status-indicator.online {
+  color:       var(--success);
+  background:  rgba(46, 168, 107, 0.1);
+}
+#status-indicator.online::before {
+  background:  var(--success);
+  box-shadow:  0 0 6px var(--success);
+  animation:   pulse-dot 2s ease-in-out infinite;
+}
+
+#status-indicator.offline {
+  color:       var(--danger);
+  background:  rgba(224, 80, 80, 0.1);
+}
+#status-indicator.offline::before { background: var(--danger); }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   NAV — ONGLETS
+   ──────────────────────────────────────────────────────────── */
+.tabs {
+  position:      sticky;
+  top:           var(--header-h);
+  z-index:       90;
+  display:       flex;
+  height:        var(--nav-h);
+  background:    rgba(10, 14, 26, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  overflow-x:    auto;
+  scrollbar-width: none;
+  flex-shrink:   0;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content:center;
+  flex:           1;
+  min-width:      56px;
+  padding:        0.5rem 0.75rem;
+  gap:            2px;
+  background:     transparent;
+  border:         none;
+  border-bottom:  3px solid transparent;
+  color:          var(--text-muted);
+  cursor:         pointer;
+  transition:     color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+  user-select:    none;
+  white-space:    nowrap;
+  min-height:     52px; /* UX R#04 - tap zone 44pt, 52px pour sécurité */
+}
+
+.tab:hover  { background: rgba(255,255,255,.04); color: var(--text); }
+.tab.active { border-bottom-color: var(--accent); color: var(--accent); }
+
+.tab-icon  { font-size: 1.1rem; line-height: 1; }
+.tab-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em; font-family: var(--font-heading); }
+
+/* ────────────────────────────────────────────────────────────
+   MAIN
+   ──────────────────────────────────────────────────────────── */
+#app {
+  flex:       1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Espace pour le footer fixe */
+  padding-bottom: calc(var(--footer-h) + 16px);
+}
+
+/* ────────────────────────────────────────────────────────────
+   FOOTER
+   ──────────────────────────────────────────────────────────── */
+footer {
+  position:     fixed;
+  bottom:       0;
+  left:         0;
+  right:        0;
+  z-index:      80;
+  height:       var(--footer-h);
+  background:   rgba(10, 14, 26, 0.95);
+  border-top:   1px solid var(--border);
+  display:      flex;
+  align-items:  center;
+  justify-content: space-between;
+  padding:      0 14px;
+  font-size:    0.7rem;
+  color:        var(--text-dim);
+  flex-shrink:  0;
+}
+
+.footer-left, .footer-right {
+  display:  flex;
+  gap:      8px;
+  align-items: center;
+}
+/* ────────────────────────────────────────────────────────────
+   PANEL — BASE
+   ──────────────────────────────────────────────────────────── */
+.panel {
+  padding: 14px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
