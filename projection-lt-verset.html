@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NTIC Bible Projector — Projection LT Verset</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:ital,wght@0,300;0,400;1,300&display=swap">
+  <style>
+    /* ══ VARIABLES & RESET ══════════════════════════════════════════════════ */
+    :root {
+      --lt-ref-text:   #ffffff;
+      --lt-verse-text: #16308f;
+      --lt-font:       'Arial Black', sans-serif;
+      --lt-width:      1240px;
+      --lt-height:     248px;
+      --lt-ref-size:   30px;
+      --lt-verse-size: 38px;
+
+      --tp-green:  #009A44;
+      --tp-yellow: #FBDE4A;
+      --tp-red:    #DC241F;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Fenêtre LT : fond toujours transparent (chroma-key OBS) */
+    html, body {
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .proj-mode {
+      display: none;
+      width: 100vw; height: 100vh;
+      position: relative;
+    }
+    .proj-mode.active { display: block; }
+
+
+    /* ══ GRADUATION (ictheme) — BIBLE LT ═════════════════════════════════ */
+
+    .stage { position: absolute; inset: 0; }
+
+    /* Positionnement du lower-third */
+    .lower-third {
+      position: absolute;
+      left: 50%; bottom: 48px;
+      transform: translateX(-50%);
+      width: var(--lt-width);
+      height: var(--lt-height);
+      pointer-events: none;
+    }
+
+    /* Badge référence Bible */
+    .reference-badge {
+      position: absolute; left: 0; top: 0;
+      height: 64px; min-width: 240px;
+      padding: 0 36px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 32px;
+      background: linear-gradient(90deg, #0a2f8b 0%, #2347d1 35%, #d6009d 100%);
+      box-shadow: 0 12px 24px rgba(0,0,0,.35),
+                  0 0 0 1px rgba(255,255,255,.12) inset,
+                  0 0 28px rgba(255,0,180,.25);
+      z-index: 3;
+    }
+    .reference-badge::after {
+      content: ""; position: absolute; inset: 0; border-radius: 32px;
+      background: linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,0) 60%);
+      pointer-events: none;
+    }
+    .reference-badge span {
+      position: relative; z-index: 1;
+      color: var(--lt-ref-text);
+      font-size: var(--lt-ref-size);
+      font-weight: 900; letter-spacing: 1.8px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+      white-space: nowrap;
+    }
+
+    /* Carte blanche principale */
+    .main-card {
+      position: absolute; left: 0; right: 0; top: 34px;
+      height: calc(var(--lt-height) - 34px);
+      border-radius: 40px; background: white; padding: 8px;
+      box-shadow: 0 18px 32px rgba(0,0,0,.28), 0 0 40px rgba(181,19,123,.15);
+    }
+    .main-card::before {
+      content: ""; position: absolute; inset: 0; border-radius: 40px; padding: 8px;
+      background: linear-gradient(135deg, #0a2f8b 0%, #2347d1 35%, #d6009d 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none; z-index: 1;
+    }
+    .card-inner {
+      position: relative; width: 100%; height: 100%;
+      border-radius: 32px;
+      background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(250,250,250,.98));
+      overflow: hidden; z-index: 2;
+    }
+    .card-inner::before {
+      content: ""; position: absolute; inset: 0; border-radius: 32px;
+      background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,0) 45%);
+      pointer-events: none;
+    }
+
+    /* Texte verset */
+    .verset-text {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 72px; text-align: center;
+      color: var(--lt-verse-text);
+      font-size: var(--lt-verse-size);
+      font-weight: 900; letter-spacing: 1.5px;
+      text-transform: uppercase; line-height: 1.15;
+      text-shadow: 0 1px 0 rgba(255,255,255,.85), 0 2px 4px rgba(0,0,0,.08);
+      z-index: 1; overflow-y: auto; max-height: 100%; white-space: pre-wrap;
+    }
+
+    /* Points de navigation segments */
+    .segment-nav {
+      position: absolute; left: 50%; bottom: 6px;
+      transform: translateX(-50%);
+      display: flex; gap: 8px; z-index: 10;
+    }
+    .seg-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(22,48,143,.35);
+      transition: background 0.2s;
+    }
+    .seg-dot.active { background: var(--lt-verse-text); }
+
+    /* Animations graduation verset */
+    .lower-third.anim-in  { animation: slideInUp    0.6s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .lower-third.anim-out { animation: slideOutDown 0.5s ease-in forwards; }
+    .lower-third.anim-in  .reference-badge { animation: fadeInScaleLeft  0.5s cubic-bezier(.34,1.56,.64,1) 0.3s both; }
+    .lower-third.anim-out .reference-badge { animation: fadeOutScaleLeft 0.4s ease-in forwards; }
+
+    @keyframes slideInUp    {
+      from { transform: translate(-50%, 100%); opacity: 0; }
+      to   { transform: translate(-50%, 0);    opacity: 1; }
+    }
+    @keyframes slideOutDown {
+      from { transform: translate(-50%, 0);    opacity: 1; }
+      to   { transform: translate(-50%, 100%); opacity: 0; }
+    }
+    @keyframes fadeInScaleLeft  { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes fadeOutScaleLeft { from { transform: scale(1);  opacity: 1; } to { transform: scale(.9); opacity: 0; } }
+
+
+    /* ══ TOURPAC — BIBLE LT ═══════════════════════════════════════════════ */
+
+    .tourpac-positioner {
+      position: absolute;
+      bottom: 48px; left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .lt {
+      position: relative;
+      width: var(--lt-width); height: var(--lt-height);
+      display: flex; align-items: stretch;
+      clip-path: polygon(0% 0%, calc(100% - 24px) 0%, 100% 22px, 100% 100%, 0% 100%);
+      border-radius: 3px 16px 16px 3px;
+      box-shadow: 0 30px 50px -20px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.2);
+      opacity: 0;
+    }
+    .lt-bar {
+      width: 8px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      border-radius: 3px 0 0 3px; overflow: hidden;
+    }
+    .lt-bar span { flex: 1; }
+    .lt-bar span:nth-child(1) { background: var(--tp-green); }
+    .lt-bar span:nth-child(2) { background: var(--tp-yellow); }
+    .lt-bar span:nth-child(3) { background: var(--tp-red); }
+    .lt-body {
+      flex: 1;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      padding: 12px 20px 14px 18px;
+      display: flex; flex-direction: column; gap: 4px;
+      border-radius: 0 14px 14px 0; overflow: hidden; position: relative;
+    }
+    .lt-body::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--tp-green) 0%, var(--tp-yellow) 45%, var(--tp-red) 100%);
+      background-size: 200% 100%;
+      animation: line-flow 4s linear infinite; opacity: 0.8;
+    }
+    @keyframes line-flow {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Ligne 1 : référence Bible */
+    .lt-l1 {
+      font-family: var(--lt-font, 'Cinzel', serif); font-weight: 700;
+      font-size: var(--lt-ref-size); letter-spacing: .08em;
+      text-transform: uppercase; color: var(--tp-green);
+      line-height: 1.25; opacity: 0; transform: translateY(8px);
+    }
+    /* Ligne 2 : texte verset */
+    .lt-l2 {
+      font-family: var(--lt-font, 'Inter', sans-serif); font-weight: 300;
+      font-style: italic; font-size: var(--lt-verse-size);
+      line-height: 1.55; letter-spacing: .02em;
+      opacity: 0; transform: translateY(8px);
+      overflow-y: auto; max-height: 100%; white-space: pre-wrap;
+    }
+
+    /* Animations tourpac */
+    .tourpac-positioner.anim-in .lt {
+      animation: lt-wipe-in 0.65s cubic-bezier(.16,1,.3,1) forwards,
+                 lt-fade-in 0.35s ease forwards;
+    }
+    .tourpac-positioner.anim-out .lt {
+      animation: lt-wipe-out 0.45s ease-in forwards,
+                 lt-fade-out 0.35s ease-in forwards;
+    }
+    @keyframes lt-wipe-in {
+      0%   { clip-path: inset(0 100% 0 0 round 3px 16px 16px 3px); }
+      70%  { clip-path: inset(0 -4%  0 0 round 3px 16px 16px 3px); }
+      100% { clip-path: inset(0 0%   0 0 round 3px 16px 16px 3px); }
+    }
+    @keyframes lt-fade-in  { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: blur(0); } }
+    @keyframes lt-wipe-out {
+      from { clip-path: inset(0 0%   0 0 round 3px 16px 16px 3px); opacity: 1; }
+      to   { clip-path: inset(0 100% 0 0 round 3px 16px 16px 3px); opacity: 0; }
+    }
+    @keyframes lt-fade-out { from { opacity: 1; filter: blur(0); } to { opacity: 0; filter: blur(6px); } }
+
+    .tourpac-positioner.anim-in .lt-l1 { animation: text-in 0.4s 0.38s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .tourpac-positioner.anim-in .lt-l2 { animation: text-in 0.4s 0.55s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .tourpac-positioner.anim-out .lt-l1,
+    .tourpac-positioner.anim-out .lt-l2 { animation: text-out 0.25s ease-in forwards; }
+
+    @keyframes text-in  { to { opacity: 1; transform: translateY(0); } }
+    @keyframes text-out { from { opacity: 1; } to { opacity: 0; transform: translateY(8px); } }
+  </style>
+</head>
+<body>
+
+  <!-- ══ MODE : Blank — transparent (état par défaut) ═══════════════════ -->
+  <div id="proj-blank" class="proj-mode active">
+    <!-- Intentionnellement vide -->
+  </div>
+
+  <!-- ══ MODE : Bible Lower Third (verset) ═══════════════════════════════ -->
+  <div id="proj-bible-lt" class="proj-mode">
+
+    <!-- Sous-mode : ictheme / graduation (violet) -->
+    <div id="graduation-bible-wrapper" style="display:none;">
+      <div class="stage">
+        <div class="lower-third" id="graduation-lt">
+          <div class="reference-badge"><span id="grad-bible-ref"></span></div>
+          <div class="main-card">
+            <div class="card-inner">
+              <div class="verset-text" id="grad-bible-text"></div>
+            </div>
+          </div>
+          <div class="segment-nav" id="grad-bible-seg-nav"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sous-mode : tourpac -->
+    <div id="tourpac-bible-wrapper" class="tourpac-positioner" style="display:none;">
+      <div class="lt">
+        <div class="lt-bar"><span></span><span></span><span></span></div>
+        <div class="lt-body">
+          <div class="lt-l1" id="tp-bible-ref"></div>
+          <div class="lt-l2" id="tp-bible-text"></div>
+        </div>
+      </div>
+      <div class="segment-nav" id="tp-bible-seg-nav"></div>
+    </div>
+
+  </div>
+
+  <!-- Constantes + utilitaires partagés (autonome) -->
+  <script src="./constants.js"></script>
+  <script src="./projection-shared.js"></script>
+
+  <script>
+    'use strict';
+
+    const MODE_IDS = ['proj-blank', 'proj-bible-lt'];
+
+    // ══ Canal dédié — projection-lt-verset ════════════════════════════════
+    const channel = createProjectionChannel(PROJECTION_CHANNELS.LT_VERSET);
+
+    // ══ État local ════════════════════════════════════════════════════════
+    let _state = {
+      mode: 'blank',
+      bible: {
+        reference: '', version: '', text: '', segment: '',
+        segments: [], segmentIndex: 0, ltType: 'ictheme',
+        settings: {},
+      },
+    };
+
+    // ══ GESTIONNAIRE DE MESSAGES ══════════════════════════════════════════
+    channel.onmessage = (event) => {
+      const msg = event.data;
+      if (!isValidProjectionMessage(msg)) return;
+
+      switch (msg.type) {
+
+        // ── Lower-third verset (alias historique : 'show-verse') ──────────
+        case 'show-lower-third':
+        case 'show-verse':
+          if (msg.data) {
+            _state.mode = 'bible';
+            _state.bible.reference    = msg.data.reference || '';
+            _state.bible.version      = '';
+            _state.bible.text         = msg.data.text || '';
+            _state.bible.segment      = msg.data.text || '';
+            _state.bible.segments     = [];
+            _state.bible.segmentIndex = 0;
+            _state.bible.ltType       = msg.data.style?.ltType || _state.bible.ltType;
+            _state.bible.settings = {
+              refColor:      msg.data.style?.refColor      || '#ffffff',
+              verseColor:    msg.data.style?.verseColor    || '#16308f',
+              fontFamily:    msg.data.style?.fontFamily    || 'Arial Black',
+              width:         msg.data.style?.width         || 1240,
+              height:        msg.data.style?.height        || 248,
+              refFontSize:   msg.data.style?.refFontSize   || 30,
+              verseFontSize: msg.data.style?.verseFontSize || 38,
+            };
+            _renderBible();
+          }
+          break;
+
+        // ── Segment d'un verset long (US-19) ──────────────────────────────
+        case 'verse:segment':
+          if (msg.segmentText !== undefined) {
+            _state.mode = 'bible';
+            if (msg.reference) _state.bible.reference = msg.reference;
+            _state.bible.segment      = msg.segmentText;
+            _state.bible.segmentIndex = msg.segmentIndex || 0;
+            if (msg.totalSegments && msg.totalSegments > 0) {
+              _state.bible.segments = Array.from({ length: msg.totalSegments }, (_, i) => i);
+            }
+            if (msg.style?.ltType) _state.bible.ltType = msg.style.ltType;
+            if (msg.style) {
+              _state.bible.settings = {
+                refColor:      msg.style.refColor      || _state.bible.settings.refColor,
+                verseColor:    msg.style.verseColor    || _state.bible.settings.verseColor,
+                fontFamily:    msg.style.fontFamily    || _state.bible.settings.fontFamily,
+                width:         msg.style.width         || _state.bible.settings.width,
+                height:        msg.style.height        || _state.bible.settings.height,
+                refFontSize:   msg.style.refFontSize   || _state.bible.settings.refFontSize,
+                verseFontSize: msg.style.verseFontSize || _state.bible.settings.verseFontSize,
+              };
+            }
+            _renderBible();
+          }
+          break;
+
+        // ── Surlignage (US-20) ────────────────────────────────────────────
+        case 'highlight:words':
+          if (msg.selectedText) {
+            highlightProjectionText(_getCurrentTextElement(), msg.selectedText, msg.color || '#FFD700');
+          }
+          break;
+
+        case 'highlight:clear':
+          if (_state.mode === 'bible') _renderBible();
+          break;
+
+        // ── Masquage (Escape) ─────────────────────────────────────────────
+        case 'hide-lower-third':
+          _state.mode = 'blank';
+          showProjectionMode(MODE_IDS, 'proj-blank');
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    // ══ Rendu Bible LT ════════════════════════════════════════════════════
+    function _renderBible() {
+      showProjectionMode(MODE_IDS, 'proj-bible-lt');
+      _applyLTCSSVars(_state.bible.settings);
+
+      const ltType = _state.bible.ltType || 'ictheme';
+      const icWrap = document.getElementById('graduation-bible-wrapper');
+      const tpWrap = document.getElementById('tourpac-bible-wrapper');
+      const ref    = (_state.bible.version ? _state.bible.version + ' ' : '') + _state.bible.reference;
+      const txt    = _state.bible.segment || _state.bible.text;
+
+      if (ltType === 'tourpac') {
+        if (icWrap) icWrap.style.display = 'none';
+        if (tpWrap) tpWrap.style.display = 'block';
+        _setText('tp-bible-ref',  ref);
+        _setText('tp-bible-text', txt);
+        renderProjectionSegNav('tp-bible-seg-nav', _state.bible.segments, _state.bible.segmentIndex);
+        triggerProjectionAnim(tpWrap, 'in');
+      } else {
+        // 'ictheme' et 'graduation' partagent le même habillage violet
+        if (tpWrap) tpWrap.style.display = 'none';
+        if (icWrap) icWrap.style.display = 'block';
+        _setText('grad-bible-ref',  ref);
+        _setText('grad-bible-text', txt);
+        renderProjectionSegNav('grad-bible-seg-nav', _state.bible.segments, _state.bible.segmentIndex);
+        triggerProjectionAnim(document.getElementById('graduation-lt'), 'in');
+      }
+    }
+
+    // ══ Helpers ═══════════════════════════════════════════════════════════
+    function _setText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text || '';
+    }
+
+    /** Applique les variables CSS communes (couleurs, tailles, police, dimensions). */
+    function _applyLTCSSVars(settings) {
+      if (!settings) return;
+      const r = document.documentElement;
+      if (settings.refColor)      r.style.setProperty('--lt-ref-text',    settings.refColor);
+      if (settings.verseColor)    r.style.setProperty('--lt-verse-text',  settings.verseColor);
+      if (settings.fontFamily)    r.style.setProperty('--lt-font',        `'${settings.fontFamily}', sans-serif`);
+      if (settings.width)         r.style.setProperty('--lt-width',       `${settings.width}px`);
+      if (settings.height)        r.style.setProperty('--lt-height',      `${settings.height}px`);
+      if (settings.refFontSize)   r.style.setProperty('--lt-ref-size',    `${settings.refFontSize}px`);
+      if (settings.verseFontSize) r.style.setProperty('--lt-verse-size',  `${settings.verseFontSize}px`);
+    }
+
+    /** Élément texte actif pour le surlignage (US-20). */
+    function _getCurrentTextElement() {
+      const lt = _state.bible.ltType || 'ictheme';
+      return document.getElementById(lt === 'tourpac' ? 'tp-bible-text' : 'grad-bible-text');
+    }
+
+    console.warn('[Projection-LT-Verset] Fenêtre active — canal "' + PROJECTION_CHANNELS.LT_VERSET + '" en écoute ✓');
+  </script>
+</body>
+</html>

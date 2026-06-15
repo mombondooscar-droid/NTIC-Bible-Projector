@@ -44,6 +44,14 @@
   ══════════════════════════════════════════════════ -->
   <link rel="stylesheet" href="./style.css">
 
+  <!-- ══════════════════════════════════════════════════
+       POLICES GOOGLE FONTS (R#07)
+       Amélioration progressive, fonctionne hors-ligne.
+  ══════════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+
   <title>NTIC Bible Projector</title>
 </head>
 
@@ -73,7 +81,7 @@
       <img src="./icons/icon-192.png" alt="NTIC" class="header-logo" width="36" height="36">
 
       <span class="header-title">NTIC Bible Projector</span>
-      <span class="header-version" aria-label="Version Sprint 1">v1.0-sp1</span>
+      <span class="header-version" aria-label="Version">v1.0</span>
     </div>
 
     <!-- Groupe : indicateurs droite -->
@@ -96,11 +104,37 @@
         style="font-size:0.78rem; padding:0.3rem 0.75rem;"
       >🖥 Projection</button>
 
-      <!-- Bouton Aperçu projection (Picture-in-Picture) -->
+      <!-- US-40 : Bouton raccourcis clavier -->
+      <button
+        id="btn-shortcuts"
+        class="btn btn-ghost btn-sm"
+        aria-label="Raccourcis clavier"
+        title="Raccourcis clavier"
+      >
+        ❓ <span class="btn-label-text">Raccourcis</span>
+      </button>
+
+      <!-- Bouton Aperçu projection (Picture-in-Picture) — R#12 : label ajouté -->
       <button
         id="btn-pip"
         class="btn btn-ghost btn-sm"
-        title="Afficher/masquer l'aperçu de projection">📹</button>
+        title="Afficher/masquer l'aperçu de projection"
+        aria-label="Afficher ou masquer l'aperçu de projection"
+      >
+        📹 <span class="btn-label-text">Aperçu</span>
+      </button>
+
+      <!-- US-015 : Hamburger (mobile ≤ 768px) — R#12 : label ajouté -->
+      <button
+        id="btn-hamburger"
+        class="btn btn-ghost btn-sm hamburger-btn"
+        aria-label="Menu de navigation"
+        aria-expanded="false"
+        aria-controls="main-tabs"
+        title="Navigation"
+      >
+        <span id="hamburger-icon">☰</span> <span class="btn-label-text">Menu</span>
+      </button>
     </div>
   </header>
 
@@ -110,7 +144,7 @@
        Les boutons utilisent data-tab pour le routing JS.
        Pas de onclick inline — addEventListener dans app.js.
   ══════════════════════════════════════════════════ -->
-  <nav class="tabs" role="tablist" aria-label="Navigation principale">
+  <nav id="main-tabs" class="tabs" role="tablist" aria-label="Navigation principale">
 
     <button
       class="tab active"
@@ -190,8 +224,6 @@
   <footer role="contentinfo">
     <div class="footer-left">
       <span>© 2025 NTIC Makabandilou</span>
-      <span aria-hidden="true">·</span>
-      <span>Sprint 1 — US-01</span>
     </div>
     <div class="footer-right" id="footer-version" aria-label="Informations techniques">
       PWA · Service Worker
@@ -224,18 +256,50 @@
        PICTURE-IN-PICTURE PREVIEW (miroir de projection)
   ══════════════════════════════════════════════════ -->
   <div id="pip-preview" class="pip-hidden">
-    <div class="pip-topbar">
-      <span>🎥 Aperçu projection</span>
+    <div class="pip-header" aria-label="Déplacer l'aperçu">
+      <span class="pip-title">🎥 Aperçu projection</span>
       <button id="pip-close" class="pip-close" aria-label="Fermer l'aperçu">×</button>
     </div>
     <div id="pip-content" class="pip-content"></div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════
+       US-40 : MODALE DES RACCOURCIS CLAVIER
+  ══════════════════════════════════════════════════ -->
+  <div id="shortcuts-modal" class="shortcuts-modal" aria-hidden="true" role="dialog">
+    <div class="modal-card">
+      <h3>⌨️ Raccourcis clavier</h3>
+      <table>
+        <tr><td>→ / ←</td><td>Verset suivant / précédent (Bible)<br>Strophe suivante / précédente (Chants)</td></tr>
+        <tr><td>↑ / ↓</td><td>Segment suivant / précédent (Bible, versets longs)</td></tr>
+        <tr><td>␣ (Espace)</td><td>Projeter le verset / la strophe sélectionné(e)</td></tr>
+        <tr><td>⎋ (Échap)</td><td>Masquer la projection (mode blank)</td></tr>
+      </table>
+      <button class="close-modal" id="close-shortcuts">Fermer</button>
+    </div>
+  </div>
 
   <!-- ══════════════════════════════════════════════════
-       SCRIPT PRINCIPAL — chargé en dernier (defer implicite)
+       SCRIPTS — Ordre de chargement strict US-R11 Sprint R3
+       ⚠️ bibleNavigation.js et bibleProjection.js DOIVENT
+       précéder TOUS les panels (fonctions cross-panels).
   ══════════════════════════════════════════════════ -->
   <script src="./db.js"></script>
+  <script src="./constants.js"></script>
+  <script src="./store.js"></script>
+  <script src="./utils/dom.js"></script>
+  <script src="./utils/bibleHelpers.js"></script>
+  <script src="./utils/songHelpers.js"></script>
+  <script src="./utils/bibleNavigation.js"></script>
+  <script src="./utils/bibleProjection.js"></script>
+  <script src="./panels/bibleSearch.js"></script>
+  <script src="./panels/bibleDual.js"></script>
+  <script src="./panels/biblePanel.js"></script>
+  <script src="./panels/songsPanel.js"></script>
+  <script src="./panels/favoritesPanel.js"></script>
+  <script src="./panels/lowerThirdPanel.js"></script>
+  <script src="./panels/settingsBinders.js"></script>
+  <script src="./panels/settingsPanel.js"></script>
   <script src="./app.js"></script>
 
 </body>

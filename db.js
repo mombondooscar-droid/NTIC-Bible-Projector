@@ -2,7 +2,7 @@
  * ============================================================
  *  NTIC BIBLE PROJECTOR — db.js
  *  BibleDB : wrapper IndexedDB
- *  Version : 2.0  |  Sprint : US-06 (ajout store favorites)
+ *  Version : 4.0  |  Sprint : US-35 (ajout index by_author)
  * ============================================================
  *
  *  Stores :
@@ -10,13 +10,14 @@
  *    - songs    : chants avec strophes
  *    - persons  : Lower Third personnes
  *    - settings : paramètres clé/valeur
- *    - favorites: favoris versets + chants  ← US-06 nouveau
+ *    - favorites: favoris versets + chants  ← US-06
+ *    - logs     : journal système (erreurs, événements clés) ← US-18
  */
 
 class BibleDB {
   // ── Configuration ──────────────────────────────────────────
   static DB_NAME    = 'bible-projector';
-  static DB_VERSION = 2; // v2 : ajout du store favorites
+  static DB_VERSION = 4; // v4 : ajout index by_author sur songs
 
   constructor() {
     this._db          = null;
@@ -35,8 +36,11 @@ class BibleDB {
     this._openPromise = new Promise((resolve, reject) => {
       const req = indexedDB.open(BibleDB.DB_NAME, BibleDB.DB_VERSION);
 
-      req.onupgradeneeded = (e) =>
-        this._upgradeDB(e.target.result, e.oldVersion);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        const transaction = e.target.transaction;
+        this._upgradeDB(db, e.oldVersion, transaction);
+      };
 
       req.onsuccess = (e) => {
         this._db = e.target.result;
@@ -55,8 +59,11 @@ class BibleDB {
   /**
    * Crée / met à jour les object stores selon la version.
    * Chaque bloc "if (oldVersion < N)" s'exécute en migration incrémentale.
+   * @param {IDBDatabase} db
+   * @param {number} oldVersion
+   * @param {IDBTransaction} transaction
    */
-  _upgradeDB(db, oldVersion) {
+  _upgradeDB(db, oldVersion, transaction) {
     // ── Version 1 : stores d'origine (US-02) ─────────────────
     if (oldVersion < 1) {
       // Bibles : clé = nom du fichier (ex: "LSG", "KJV")
@@ -101,11 +108,86 @@ class BibleDB {
         s.createIndex('by_ref',   'ref',   { unique: true  });
       }
     }
+
+    // ── Version 3 : store logs (Problème #18) ─────────────────
+    if (oldVersion < 3) {
+      if (!db.objectStoreNames.contains('logs')) {
+        const s = db.createObjectStore('logs', {
+          keyPath: 'id', autoIncrement: true,
+        });
+        s.createIndex('by_ts', 'ts', { unique: false });
+        s.createIndex('by_level', 'level', { unique: false });
+      }
+    }
+
+    // ── Version 4 : index by_author sur songs (US-35) ─────────
+    if (oldVersion < 4) {
+      const songsStore = transaction.objectStore('songs');
+      if (!songsStore.indexNames.contains('by_author')) {
+        songsStore.createIndex('by_author', 'author', { unique: false });
+      }
+    }
   }
 
   // ── Helper interne : obtenir la DB ouverte ─────────────────
   async _getDB() {
     return this._db || this.open();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  LOGGING (Problème #18)
+  // ══════════════════════════════════════════════════════════
+
+  /**
+   * Ajoute une entrée dans le journal système (non-bloquant).
+   * @param {'info'|'warn'|'error'} level
+   * @param {string} message
+   * @param {object|null} data
+   */
+  async log(level, message, data = null) {
+    try {
+      const db = await this._getDB();
+      const tx = db.transaction('logs', 'readwrite');
+      const store = tx.objectStore('logs');
+      // Ajout du log
+      store.add({ level, message, data, ts: Date.now() });
+
+      // Nettoyage asynchrone : garder max 200 logs
+      store.count().onsuccess = (e) => {
+        const count = e.target.result;
+        if (count > 200) {
+          const toDelete = count - 200;
+          const getAllReq = store.getAll();
+          getAllReq.onsuccess = () => {
+            const all = getAllReq.result;
+            all.sort((a, b) => a.id - b.id);
+            for (let i = 0; i < toDelete; i++) {
+              store.delete(all[i].id);
+            }
+          };
+        }
+      };
+    } catch (err) {
+      console.warn('[BibleDB] Échec écriture log:', err);
+    }
+  }
+
+  /**
+   * Retourne tous les logs (triés par timestamp décroissant).
+   * @returns {Promise<Array>}
+   */
+  async getAllLogs() {
+    const db = await this._getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('logs', 'readonly');
+      const req = tx.objectStore('logs').getAll();
+      req.onsuccess = () => {
+        const logs = req.result || [];
+        logs.sort((a, b) => b.ts - a.ts);
+        resolve(logs);
+      };
+      req.onerror = (e) => reject(e.target.error);
+    });
   }
 
   // ══════════════════════════════════════════════════════════
@@ -176,7 +258,7 @@ class BibleDB {
       };
       const req = data.id ? tx.objectStore('songs').put(data)
                           : tx.objectStore('songs').add(data);
-      req.onsuccess = (e) => resolve(e.target.result); // retourne l'id
+      req.onsuccess = (e) => resolve(e.target.result);
       req.onerror   = (e) => reject(e.target.error);
     });
   }
@@ -192,14 +274,68 @@ class BibleDB {
     });
   }
 
-  /** Retourne tous les chants (non triés). */
+  /**
+   * Retourne tous les chants (triés par titre alphabétique français).
+   * @returns {Promise<Array>}
+   */
   async getAllSongs() {
     const db = await this._getDB();
     return new Promise((resolve, reject) => {
       const tx  = db.transaction('songs', 'readonly');
       const req = tx.objectStore('songs').getAll();
-      req.onsuccess = (e) => resolve(e.target.result ?? []);
+      req.onsuccess = (e) => {
+        const songs = e.target.result ?? [];
+        songs.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'fr', { sensitivity: 'base' }));
+        resolve(songs);
+      };
       req.onerror   = (e) => reject(e.target.error);
+    });
+  }
+
+  /**
+   * Recherche textuelle dans les titres (index by_title).
+   * Utilise IDBKeyRange pour une recherche par préfixe.
+   * @param {string} query
+   * @returns {Promise<Array>}
+   */
+  async searchSongsByTitle(query) {
+    const db = await this._getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('songs', 'readonly');
+      const idx = tx.objectStore('songs').index('by_title');
+      const results = [];
+
+      // Borne : toutes les chaînes commençant par "query"
+      const range = query
+        ? IDBKeyRange.bound(query, query + '\uffff', false, false)
+        : null;
+
+      const req = range ? idx.openCursor(range) : idx.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          results.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(results);
+        }
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  /**
+   * Recherche textuelle dans les titres et auteurs (mémoire, fallback).
+   * @param {string} query
+   * @returns {Promise<Array>}
+   */
+  async searchSongs(query) {
+    const all = await this.getAllSongs();
+    const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return all.filter(s => {
+      const title = (s.title || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const author = (s.author || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return title.includes(q) || author.includes(q);
     });
   }
 
