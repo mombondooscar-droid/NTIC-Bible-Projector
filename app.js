@@ -632,8 +632,8 @@ function patchSafePostMessageForWS() {
     const resource = getResourceForMessage(msg);
     const relayMsg = { ...msg, version: BC_MESSAGE_VERSION, _origin: TAB_ID, resource: resource };
 
-    // Utiliser le nouveau WSClient
-    if (WSClient.isConnected) {
+    // Utiliser le nouveau WSClient (seulement si ce n'est pas déjà un message relayé)
+    if (WSClient.isConnected && !msg._fromWS) {
       WSClient.send(relayMsg);
     }
 
@@ -792,7 +792,7 @@ function initUI() {
   });
   
   WSClient.on('stateUpdate', (update) => {
-    console.log("[WSClient] Mise à jour d'état:", update.type);
+    console.log("[WSClient] Mise à jour d'etat:", update.type);
     if (update.type === 'full') {
       // Synchroniser l'état local
       if (update.state.lastBibleRef) {

@@ -602,10 +602,10 @@ const WSClient = (function() {
   function _handleIncomingMessage(message) {
     const type = message.type;
     
-    // Heartbeat
-    if (type === 'heartbeat') {
+    // Heartbeat du serveur
+    if (type === 'heartbeat' || type === 'heartbeat-ack') {
       // Répondre au heartbeat pour maintenir la connexion
-      if (_connected && _ws && _ws.readyState === WebSocket.OPEN) {
+      if (_connected && _ws && _ws.readyState === WebSocket.OPEN && type === 'heartbeat') {
         try {
           _ws.send(JSON.stringify({
             type: 'heartbeat-ack',
@@ -616,13 +616,9 @@ const WSClient = (function() {
         } catch (e) {
           console.warn('[WSClient] Erreur réponse heartbeat:', e);
         }
+      } else if (type === 'heartbeat-ack') {
+        _lastHeartbeatAckReceived = Date.now();
       }
-      return;
-    }
-    
-    // Heartbeat acknowledgment
-    if (type === 'heartbeat-ack') {
-      _lastHeartbeatAckReceived = Date.now();
       return;
     }
     
@@ -861,15 +857,14 @@ const WSClient = (function() {
   }
 
   function _handleProjectionMessage(message) {
-    // Transmettre au BroadcastChannel local
-    if (window.safePostMessage) {
-      window.safePostMessage(message);
-    }
-    
-    // Notifier
+    // Notifier le callback local (pour les panels, etc.)
     if (_onMessage) {
       _onMessage(message);
     }
+    
+    // NE PAS appeler safePostMessage ici pour éviter la boucle infinie
+    // Les messages de projection sont déjà diffusés via BroadcastChannel
+    // par le patch dans app.js. Si on les renvoie ici, on crée une boucle.
   }
 
   // ============================================================

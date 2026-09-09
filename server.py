@@ -473,7 +473,8 @@ async def handle_message(client: WebSocketClient, message: Dict):
     
     # Heartbeat
     if msg_type == 'heartbeat':
-        await client.send({'type': 'heartbeat', 'serverTime': datetime.now().isoformat()})
+        await client.send({'type': 'heartbeat-ack', 'serverTime': datetime.now().isoformat()})
+        client.last_heartbeat = datetime.now()
         return
     
     # Demande d'état

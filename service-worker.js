@@ -21,9 +21,9 @@ const URLS_TO_CACHE = [
   './offline.html',
   './projection-bible.html',
   './projection-chant.html',
-
   './projection-timer.html',
   './projection-shared.js',
+  './projection-lt.html',
   './manifest.json',
   './styles/base.css',
   './styles/components.css',
@@ -46,14 +46,14 @@ const URLS_TO_CACHE = [
   './scripts/panels/timer/timerList.js',
   './scripts/panels/timer/timerForm.js',
   './scripts/panels/timer/timerControls.js',
-  './scripts/panels/timerPanel.js',
+  './scripts/panels/timer/timerPanel.js',
   './scripts/panels/lowerthird/ltPreview.js',
-
   './scripts/panels/lowerthird/ltPersons.js',
   './scripts/panels/lowerThirdPanel.js',
   './scripts/panels/settingsPanel.js',
   './scripts/utils/wsClient.js',
   './styles/animations.css',
+  './styles/projection-base.css',
 
 ];
 
