@@ -509,6 +509,7 @@ async def handle_message(client: WebSocketClient, message: Dict):
         
         if lock_manager.release(resource, session_id):
             await broadcast_lock_update(resource, None)
+            logger.info(f"Verrou libéré pour {resource} par {client.client_name}")
         return
     
     # Messages de projection (à diffuser)
