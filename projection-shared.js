@@ -1,18 +1,13 @@
 /**
  * ============================================================
  *  projection-shared.js — Utilitaires partagés (fenêtres de projection)
- *  NTIC Bible Projector · Demande #5 — Éclatement projection.html
- *  Scope global (pas de module) — chargé après constants.js dans
- *  chaque fichier projection-*.html
- *
- *  ⚠ AUTONOME : ce fichier ne doit dépendre d'AUCUN autre fichier
- *  de l'application (app.js, panels/, store.js, db.js…).
- *  Il ne dépend QUE de constants.js (pour BC_MESSAGE_VERSION).
+ *  NTIC Bible Projector · Version simplifiée (WebSocket only)
+ *  Scope global (pas de module) — chargé après constants.js
  * ============================================================
  */
 
 // ─────────────────────────────────────────────────────────────
-//  ÉCHAPPEMENT HTML (copie autonome de utils/dom.js::esc)
+//  ÉCHAPPEMENT HTML (copie autonome)
 // ─────────────────────────────────────────────────────────────
 function esc(str) {
   if (!str) return '';
@@ -25,28 +20,14 @@ function esc(str) {
 
 // ─────────────────────────────────────────────────────────────
 //  CANAL DE PROJECTION (BroadcastChannel + fallback localStorage)
-//  Variante autonome de utils/dom.js::createProjectionChannel,
-//  sans dépendance à showToast() ni à App.
 // ─────────────────────────────────────────────────────────────
-
-/** Clé localStorage utilisée pour le fallback (un préfixe par canal). */
 const PROJ_BC_FALLBACK_PREFIX = 'ntic_proj_fallback_';
 
-/**
- * Crée un canal de communication compatible BroadcastChannel,
- * avec repli sur localStorage si BroadcastChannel n'est pas supporté
- * (anciens navigateurs / certains contextes WebView).
- *
- * @param {string} channelName  Nom du canal (ex: PROJECTION_CHANNELS.LT)
- * @returns {Object} Objet canal avec .postMessage() et .onmessage
- */
 function createProjectionChannel(channelName) {
-  // Support natif
   if (typeof BroadcastChannel !== 'undefined') {
     return new BroadcastChannel(channelName);
   }
 
-  // Fallback localStorage
   console.warn(`[ProjectionChannel:${channelName}] BroadcastChannel non supporté → fallback localStorage`);
 
   const storageKey = PROJ_BC_FALLBACK_PREFIX + channelName;
@@ -100,11 +81,6 @@ function createProjectionChannel(channelName) {
 // ─────────────────────────────────────────────────────────────
 //  VÉRIFICATION DE VERSION DES MESSAGES
 // ─────────────────────────────────────────────────────────────
-/**
- * Vérifie qu'un message reçu correspond à la version BC attendue.
- * @param {*} msg
- * @returns {boolean} true si le message est valide et utilisable
- */
 function isValidProjectionMessage(msg) {
   if (!msg) return false;
   if (msg.version !== BC_MESSAGE_VERSION) {
@@ -117,13 +93,6 @@ function isValidProjectionMessage(msg) {
 // ─────────────────────────────────────────────────────────────
 //  MASQUAGE GÉNÉRIQUE DES MODES
 // ─────────────────────────────────────────────────────────────
-/**
- * Bascule l'attribut .active sur les conteneurs `.proj-mode` /
- * éléments d'overlay d'une fenêtre de projection.
- *
- * @param {string[]} modeIds   Liste des ids de conteneurs de mode
- * @param {string|null} activeId  Id du mode à activer (null = tout masquer)
- */
 function showProjectionMode(modeIds, activeId) {
   modeIds.forEach((id) => {
     const el = document.getElementById(id);
@@ -131,38 +100,25 @@ function showProjectionMode(modeIds, activeId) {
   });
 }
 
-/** Masque tous les overlays d'une fenêtre (retour à l'écran vide/transparent). */
 function hideAllProjectionModes(modeIds) {
   showProjectionMode(modeIds, null);
 }
 
 // ─────────────────────────────────────────────────────────────
-//  ANIMATIONS LOWER THIRD (in / out)
+//  ANIMATIONS LOWER THIRD
 // ─────────────────────────────────────────────────────────────
-/**
- * Déclenche une animation d'entrée ou de sortie sur un wrapper LT,
- * en relançant l'animation CSS même si la classe est déjà présente.
- * @param {HTMLElement|null} wrapper
- * @param {'in'|'out'} direction
- */
 function triggerProjectionAnim(wrapper, direction) {
   if (!wrapper) return;
   const addCls    = direction === 'in' ? 'anim-in'  : 'anim-out';
   const removeCls = direction === 'in' ? 'anim-out' : 'anim-in';
   wrapper.classList.remove(removeCls);
-  void wrapper.offsetWidth; // reflow forcé pour rejouer l'animation
+  void wrapper.offsetWidth;
   wrapper.classList.add(addCls);
 }
 
 // ─────────────────────────────────────────────────────────────
-//  NAVIGATION PAR SEGMENTS (points)
+//  NAVIGATION PAR SEGMENTS
 // ─────────────────────────────────────────────────────────────
-/**
- * Affiche des points de navigation pour les segments (verset long, strophes…).
- * @param {string} navId        Id du conteneur des points
- * @param {Array}  segments      Tableau (longueur = nombre de points)
- * @param {number} activeIndex   Index du point actif
- */
 function renderProjectionSegNav(navId, segments, activeIndex) {
   const nav = document.getElementById(navId);
   if (!nav) return;
@@ -176,40 +132,87 @@ function renderProjectionSegNav(navId, segments, activeIndex) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  SURLIGNAGE (US-20) — version générique réutilisable
+//  CLIENT RELAY (WebSocket uniquement)
+//  Les fenêtres de projection utilisent WebSocket pour recevoir
+//  les messages depuis le serveur. Plus de SSE/Polling.
 // ─────────────────────────────────────────────────────────────
-/**
- * Surligne les occurrences de `selectedText` dans l'élément ciblé.
- * Échappement XSS strict — aucun input utilisateur brut dans innerHTML.
- *
- * @param {HTMLElement|null} el      Élément texte cible
- * @param {string} selectedText      Texte sélectionné à surligner
- * @param {string} color             Couleur de surbrillance (#hex)
- */
-function highlightProjectionText(el, selectedText, color) {
-  if (!el || !selectedText) return;
 
-  // 1. Récupérer le texte brut (sans marks existants)
-  const plainText = el.innerText || el.textContent || '';
+function initRelayClient(onMessage) {
+  if (typeof location === 'undefined') return null;
+  if (!location.protocol.startsWith('http')) return null;
 
-  // 2. Encoder HTML le texte brut (protection XSS)
-  const htmlEncoded = plainText
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
-
-  // 3. Remplacer les occurrences par des <mark>
-  const escaped = selectedText
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const safeColor = (color || '#FFD700').replace(/[^#a-zA-Z0-9]/g, '');
-  const re = new RegExp(`(${escaped})`, 'gi');
-
-  el.innerHTML = htmlEncoded.replace(
-    re,
-    `<mark style="background:${safeColor};color:#000;border-radius:3px;padding:0 2px;">$1</mark>`,
-  );
+  // On utilise directement WebSocket
+  const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${wsProtocol}//${location.host}`;
+  
+  let ws = null;
+  let active = true;
+  let reconnectTimer = null;
+  
+  function connect() {
+    if (!active) return;
+    try {
+      ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        console.log('[Relay] WebSocket connecté');
+        // S'abonner aux topics selon le canal de la fenêtre
+        // Le topic est détecté à partir de l'URL de la fenêtre
+        let topic = 'default';
+        if (location.pathname.includes('projection-bible')) topic = 'bible';
+        else if (location.pathname.includes('projection-chant')) topic = 'chant';
+        else if (location.pathname.includes('projection-lt')) topic = 'lt';
+        else if (location.pathname.includes('projection-timer')) topic = 'timer';
+        
+        if (topic !== 'default') {
+          ws.send(JSON.stringify({ type: 'subscribe', topic }));
+          console.log(`[Relay] Abonné au topic : ${topic}`);
+        }
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (isValidProjectionMessage(msg)) {
+            onMessage(msg);
+          }
+        } catch (err) {
+          console.warn('[Relay] Erreur parsing message', err);
+        }
+      };
+      
+      ws.onclose = () => {
+        console.warn('[Relay] WebSocket fermé, tentative de reconnexion...');
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(() => {
+          if (active) connect();
+        }, 3000);
+      };
+      
+      ws.onerror = (err) => {
+        console.warn('[Relay] Erreur WebSocket', err);
+      };
+    } catch (err) {
+      console.warn('[Relay] Échec connexion WebSocket', err);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        if (active) connect();
+      }, 3000);
+    }
+  }
+  
+  connect();
+  
+  return {
+    close() {
+      active = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) {
+        try { ws.close(); } catch(e) {}
+        ws = null;
+      }
+    }
+  };
 }
 
 console.warn('[ProjectionShared] Utilitaires chargés ✓');

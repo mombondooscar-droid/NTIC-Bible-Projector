@@ -1,13 +1,13 @@
 {
-  "name": "NTIC Bible Projector",
-  "short_name": "BibleProj",
-  "description": "Application de projection biblique avec gestion des chants, versets et lower thirds — NTIC Makabandilou",
+  "name": "NAGAD Bible",
+  "short_name": "NAGAD",
+  "description": "Application de projection biblique avec gestion des chants, versets et lower thirds — NAGAD — ICC Brazzaville",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#0a0e1a",
-  "background_color": "#0a0e1a",
+  "theme_color": "#0a1628",
+  "background_color": "#0a1628",
   "lang": "fr",
   "icons": [
     {
@@ -42,7 +42,7 @@
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "NTIC Bible Projector — Onglet Bible"
+      "label": "NAGAD Bible — Onglet Bible"
     }
   ],
   "shortcuts": [

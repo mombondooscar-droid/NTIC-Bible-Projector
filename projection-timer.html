@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAGAD Bible — Projection Temps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Syne:wght@700;800&family=Inter:ital,wght@0,300;0,400;1,300&family=Noto+Serif+Hebrew:wght@400&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a1628;
+      --card-bg: rgba(13, 30, 54, 0.92);
+      --border: rgba(255,255,255,0.08);
+      --text: #f4f2ee;
+      --muted: #7a8499;
+      --shadow: 0 8px 32px rgba(0,0,0,0.5);
+      --grad: linear-gradient(145deg, #2347d1 0%, #d6009d 100%);
+      --warn: #FF8C00;
+      --crit: #FF0000;
+      --pause: #6b7280;
+      --stop: #4b5563;
+      --clock-font: 'Syne', 'Arial Black', sans-serif;
+      --text-font: 'Inter', 'Arial', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: var(--text-font);
+      color: var(--text);
+    }
+
+    /* ── Conteneur principal en grille fixe ──────────────── */
+    #proj-timer-root {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      width: 100vw;
+      height: 100vh;
+      padding: 1.5vh 2vw 1.5vh;
+      gap: 0.8vh;
+      background: radial-gradient(ellipse at center, #0d1e36, #0a1628);
+      overflow: hidden;
+    }
+
+    /* ── Horloge ──────────────────────────────────────────── */
+    .clock-section {
+      min-height: clamp(40px, 8vh, 80px);
+      max-height: clamp(56px, 12vh, 130px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    #proj-clock {
+      font-family: var(--clock-font);
+      font-size: clamp(2.2rem, 8vw, 5rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    }
+
+    /* ── Grille des timers ───────────────────────────────── */
+    #proj-timers {
+      min-height: 0;          /* empêche le débordement */
+      display: grid;
+      gap: 1.2vh 1.2vw;
+      align-content: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0.5vh 0;
+      transition: gap 0.2s ease;
+    }
+
+    /* ── Logo ────────────────────────────────────────────── */
+    #timer-logo-container {
+      min-height: clamp(30px, 5vh, 70px);
+      max-height: clamp(40px, 8vh, 90px);
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding-bottom: 0.5vh;
+      opacity: 0.95;
+      filter: drop-shadow(0 8px 40px rgba(0,0,0,0.7));
+    }
+    #timer-logo-container svg {
+      width: 100%;
+      height: 100%;
+      max-width: 340px;
+    }
+
+    /* ── Disposition des cartes selon le nombre ──────────── */
+    #proj-timers.count-0 { display: none; }
+
+    #proj-timers.count-1 {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      align-items: center;
+    }
+    #proj-timers.count-1 .timer-card {
+      width: 60%;
+      aspect-ratio: 16 / 9;
+      padding: 0.8rem 1rem;
+    }
+    #proj-timers.count-1 .timer-value { font-size: clamp(2rem, 4vw, 3.5rem); }
+    #proj-timers.count-1 .timer-title { font-size: clamp(0.7rem, 1.2vw, 1rem); }
+
+    #proj-timers.count-2 {
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+    }
+    #proj-timers.count-2 .timer-card {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      padding: 0.8rem 1rem;
+    }
+
+    #proj-timers.count-3 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 1vh 1.2vw;
+    }
+    #proj-timers.count-3 .timer-card {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 16 / 9;
+      padding: 0.6rem 0.8rem;
+    }
+    #proj-timers.count-3 .timer-card:last-child {
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: 60%;
+    }
+    #proj-timers.count-3 .timer-value { font-size: clamp(1.8rem, 3vw, 2.8rem); }
+
+    #proj-timers.count-4 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 0.8vh 1vw;
+    }
+    #proj-timers.count-4 .timer-card {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 16 / 9;
+      padding: 0.4rem 0.6rem;
+    }
+    #proj-timers.count-4 .timer-value { font-size: clamp(1.4rem, 2.5vw, 2.2rem); }
+    #proj-timers.count-4 .timer-title { font-size: clamp(0.55rem, 0.9vw, 0.75rem); }
+    #proj-timers.count-4 .timer-status { font-size: clamp(0.45rem, 0.7vw, 0.6rem); }
+
+    /* ── Style des cartes ────────────────────────────────── */
+    .timer-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+      animation: fadeIn 0.4s ease forwards;
+      min-height: 0;
+    }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(15px); } to { opacity:1; transform: translateY(0); } }
+    .timer-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--grad);
+      opacity: 0.6;
+    }
+    .timer-card.alert-active {
+      animation: alert-blink 0.8s infinite;
+      border-color: var(--crit);
+      box-shadow: 0 0 40px rgba(255,0,0,0.6);
+    }
+    @keyframes alert-blink { 0%, 100% { background: rgba(255,0,0,0.15); } 50% { background: rgba(255,0,0,0.35); } }
+    .timer-card.warn { border-color: var(--warn); box-shadow: 0 0 20px rgba(255,140,0,0.4); }
+    .timer-card.crit { border-color: var(--crit); box-shadow: 0 0 30px rgba(255,0,0,0.5); }
+    .timer-card.paused { opacity: 0.6; }
+    .timer-card.stopped { opacity: 0.4; }
+
+    .timer-title {
+      width: 100%;
+      height: calc(100% / 9);
+      min-height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 0 0.5rem;
+      font-size: clamp(0.65rem, 1.1vw, 1rem);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+    .timer-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0.2rem 0.5rem;
+      width: 100%;
+      min-height: 0;
+    }
+    .timer-value {
+      font-family: var(--clock-font);
+      font-weight: 800;
+      line-height: 1.2;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+      font-size: clamp(1.8rem, 4vw, 4rem);
+    }
+    .timer-value.normal   { color: #f4f2ee; }
+    .timer-value.warning  { color: var(--warn); }
+    .timer-value.critical { color: var(--crit); }
+    .timer-value.paused   { color: var(--pause); }
+    .timer-value.stopped  { color: var(--stop); }
+
+    .timer-status {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.1rem 0.6rem;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      margin-top: 0.2rem;
+      font-size: clamp(0.5rem, 0.8vw, 0.7rem);
+    }
+    .timer-status.running { color:#4ade80; background:rgba(74,222,128,0.12); }
+    .timer-status.paused  { color:#facc15; background:rgba(250,204,21,0.12); }
+    .timer-status.stopped { color:#9ca3af; background:rgba(156,163,175,0.08); }
+    .timer-status.clock   { color:#60a5fa; background:rgba(96,165,250,0.12); }
+
+    .timer-progress {
+      width: 80%;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      margin-top: 0.3rem;
+      overflow: hidden;
+      transition: height 0.2s;
+    }
+    .timer-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--grad);
+      transition: width 0.3s ease;
+      border-radius: 3px;
+    }
+    .timer-progress-bar.warning { background: var(--warn); }
+    .timer-progress-bar.critical { background: var(--crit); }
+
+    .timer-alert-msg {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(1rem, 3vw, 2.5rem);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(255,0,0,0.8);
+      background: rgba(0,0,0,0.6);
+      padding: 0.2rem 1.5rem;
+      border-radius: 12px;
+      border: 2px solid var(--crit);
+      display: none;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .timer-alert-msg.on { display: block; animation: alert-msg-pulse 1s infinite; }
+    @keyframes alert-msg-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.05); } }
+
+    /* ── Bouton de sortie plein écran ────────────────────── */
+    .fullscreen-exit-btn {
+      position: fixed;
+      top: 16px; right: 20px;
+      z-index: 100;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+      display: none;
+    }
+    .fullscreen-exit-btn:hover { opacity:1; }
+    .fullscreen-exit-btn.visible { display:block; }
+
+    /* ── Mode plein écran (grille réduite à une ligne) ──── */
+    #proj-timer-root.fullscreen {
+      grid-template-rows: 1fr;
+      padding: 0;
+      gap: 0;
+    }
+    #proj-timer-root.fullscreen .clock-section,
+    #proj-timer-root.fullscreen #timer-logo-container {
+      display: none;
+    }
+    #proj-timer-root.fullscreen #proj-timers {
+      gap: 0;
+      padding: 0;
+    }
+    #proj-timer-root.fullscreen #proj-timers .timer-card {
+      border-radius: 0;
+      padding: 2rem 3rem;
+      aspect-ratio: auto;
+    }
+    #proj-timer-root.fullscreen #proj-timers .timer-value {
+      font-size: clamp(4rem, 12vw, 8rem);
+    }
+    #proj-timer-root.fullscreen #proj-timers .timer-title {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+    }
+    #proj-timer-root.fullscreen #proj-timers .timer-status {
+      font-size: clamp(0.8rem, 1.5vw, 1.2rem);
+    }
+    #proj-timer-root.fullscreen #proj-timers .timer-progress {
+      height: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="proj-timer-root">
+  <!-- Horloge -->
+  <div class="clock-section">
+    <div id="proj-clock">--:--:--</div>
+  </div>
+
+  <!-- Grille des timers -->
+  <div id="proj-timers"></div>
+
+  <!-- Logo NAGAD (toujours présent) -->
+  <div id="timer-logo-container">
+    <svg viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="nagad-logo-grad" x1="20" y1="12" x2="140" y2="148" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#2347d1"/>
+          <stop offset="100%" stop-color="#d6009d"/>
+        </linearGradient>
+        <clipPath id="nagad-logo-clip">
+          <text x="80" y="120" font-family="'Noto Serif Hebrew','Times New Roman',serif" font-size="110" text-anchor="middle">נ</text>
+        </clipPath>
+      </defs>
+      <rect x="10" y="8" width="140" height="144" clip-path="url(#nagad-logo-clip)" fill="url(#nagad-logo-grad)"/>
+      <line x1="138" y1="20" x2="138" y2="140" stroke="#2347d1" stroke-width="1.2" opacity="0.55"/>
+      <text x="160" y="88" font-family="'Cinzel','Georgia',serif" font-size="42" font-weight="900" letter-spacing="12" fill="#f4f2ee">NAGAD</text>
+      <text x="162" y="116" font-family="'Poppins','Arial',sans-serif" font-size="12" font-weight="300" letter-spacing="4.5" fill="#7a8499">RENDRE CHRIST PLUS PROCHE</text>
+    </svg>
+  </div>
+</div>
+
+<button class="fullscreen-exit-btn" id="fullscreen-exit-btn" aria-label="Quitter le mode plein écran">✕ Quitter</button>
+
+<script src="./constants.js"></script>
+<script src="./projection-shared.js"></script>
+
+<script>
+  'use strict';
+
+  const channel = createProjectionChannel(PROJECTION_CHANNELS.TIMER);
+  let timers = [];
+  let clockInterval = null;
+  let fullscreenTimerId = null;
+  const MAX_VISIBLE_TIMERS = 4;
+  const RELAY_TYPES = new Set([
+    'show-timer-state', 'timer-tick', 'timer-hide-chrono',
+    'timer-fullscreen-enter', 'timer-fullscreen-exit'
+  ]);
+
+  // ─── Gestion des messages ────────────────────────────────
+  function handleMessage(e) {
+    const msg = e.data;
+    if (!isValidProjectionMessage(msg)) return;
+
+    switch (msg.type) {
+      case 'show-timer-state':
+        if (msg.data?.timers) { timers = msg.data.timers; render(); }
+        if (msg.data?.clocks) {
+          msg.data.clocks.forEach(c => {
+            if (!timers.find(t => t.id === c.id)) timers.push({ ...c, mode: 'clock' });
+          });
+          render();
+        }
+        break;
+      case 'timer-tick':
+        if (msg.id === 'system-clock') break;
+        const t = timers.find(t => t.id === msg.id);
+        if (t) {
+          t.elapsed = msg.elapsed;
+          t.severity = msg.severity;
+          t.blink = msg.blink;
+          t.alertActive = (t.elapsed <= 0 && t.status === 'running');
+          updateSingle(msg.id);
+        }
+        break;
+      case 'timer-hide-chrono':
+        timers = [];
+        render();
+        break;
+      case 'timer-fullscreen-enter':
+        if (msg.timerId) {
+          fullscreenTimerId = msg.timerId;
+          render(true);
+          document.getElementById('fullscreen-exit-btn').classList.add('visible');
+          document.getElementById('proj-timer-root').classList.add('fullscreen');
+        }
+        break;
+      case 'timer-fullscreen-exit':
+        fullscreenTimerId = null;
+        render(true);
+        document.getElementById('fullscreen-exit-btn').classList.remove('visible');
+        document.getElementById('proj-timer-root').classList.remove('fullscreen');
+        break;
+    }
+  }
+
+  channel.onmessage = handleMessage;
+
+  // Relay réseau
+  if (typeof initRelayClient === 'function') {
+    initRelayClient(msg => {
+      if (RELAY_TYPES.has(msg.type)) {
+        handleMessage({ data: msg });
+      }
+    });
+  }
+
+  // ─── Horloge ───────────────────────────────────────────────
+  function startClock() {
+    if (clockInterval) clearInterval(clockInterval);
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000);
+  }
+  function updateClock() {
+    const el = document.getElementById('proj-clock');
+    if (el) el.textContent = new Date().toTimeString().slice(0, 8);
+  }
+
+  // ─── Rendu principal ──────────────────────────────────────
+  function render(keepAnim = false) {
+    const container = document.getElementById('proj-timers');
+    if (!container) return;
+
+    // Filtrage des timers visibles
+    let visible = timers.filter(t => t.visibleOnStage !== false);
+    if (fullscreenTimerId) {
+      const fsTimer = visible.find(t => t.id === fullscreenTimerId);
+      if (fsTimer) {
+        visible = [fsTimer];
+      } else {
+        // Le timer plein écran n'existe plus → sortie forcée
+        fullscreenTimerId = null;
+        document.getElementById('fullscreen-exit-btn').classList.remove('visible');
+        document.getElementById('proj-timer-root').classList.remove('fullscreen');
+      }
+    }
+
+    // Limiter à 4
+    if (visible.length > MAX_VISIBLE_TIMERS) {
+      visible = visible.slice(0, MAX_VISIBLE_TIMERS);
+    }
+
+    const effectiveCount = Math.min(visible.length, MAX_VISIBLE_TIMERS);
+    // La classe count-* gère la disposition des cartes
+    container.className = 'count-' + effectiveCount;
+
+    // Le mode plein écran est géré par une classe sur le root
+    // (déjà ajoutée/supprimée par les messages)
+
+    // Logo et horloge ne sont plus masqués par JS ; c'est le CSS qui gère via .fullscreen
+
+    if (effectiveCount === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = visible.map((t, i) => buildCard(t, i)).join('');
+
+    if (!keepAnim) {
+      container.querySelectorAll('.timer-card').forEach((card, i) => {
+        setTimeout(() => { card.style.animation = 'fadeIn 0.4s ease forwards'; }, i * 80);
+      });
+    }
+  }
+
+  // ─── Construction d'une carte ─────────────────────────────
+  function buildCard(timer, index) {
+    const timeStr = formatTime(timer.elapsed || 0, timer.format || 'auto');
+    const sev = timer.severity || 'normal';
+    const status = timer.status || 'idle';
+    const isClock = timer.mode === 'clock';
+    const alertOn = timer.alertActive && timer.elapsed <= 0 && timer.status === 'running';
+    const alertMsg = esc(timer.alertMessage || '⏰ Temps écoulé !');
+    const textColor = timer.textColor || null;
+
+    let progressPercent = 0;
+    if (timer.mode === 'countdown' && timer.targetTimestamp && timer.createdAt) {
+      const total = timer.targetTimestamp - timer.createdAt;
+      if (total > 0) {
+        const remaining = timer.elapsed;
+        progressPercent = Math.min(100, Math.max(0, ((total - remaining) / total) * 100));
+      }
+    } else if (timer.mode === 'specific_time' || timer.mode === 'specific_date') {
+      if (timer.targetTimestamp && timer.createdAt) {
+        const total = timer.targetTimestamp - timer.createdAt;
+        if (total > 0) {
+          const remaining = timer.elapsed;
+          progressPercent = Math.min(100, Math.max(0, ((total - remaining) / total) * 100));
+        }
+      }
+    }
+    const progressClass = sev === 'warning' ? 'warning' : sev === 'critical' ? 'critical' : '';
+
+    return `
+      <div class="timer-card ${sev==='warning'?'warn':''} ${sev==='critical'?'crit':''} ${status==='paused'?'paused':''} ${status==='stopped'?'stopped':''} ${alertOn ? 'alert-active' : ''}"
+           data-id="${esc(timer.id)}" data-index="${index}"
+           style="${textColor ? `--timer-text-color: ${textColor};` : ''}">
+        <div class="timer-title" style="${textColor ? `color: ${textColor};` : ''}" title="${esc(timer.title||'')}">${esc(timer.title || 'Minuteur')}</div>
+        <div class="timer-body">
+          <div class="timer-value ${sev}" style="${textColor ? `color: ${textColor};` : ''}">${esc(timeStr)}</div>
+          <div class="timer-status ${isClock ? 'clock' : status}">${isClock ? 'Horloge' : esc(status)}</div>
+          ${!isClock && timer.mode !== 'clock' ? `
+            <div class="timer-progress">
+              <div class="timer-progress-bar ${progressClass}" style="width: ${progressPercent}%;"></div>
+            </div>
+          ` : ''}
+          <div class="timer-alert-msg ${alertOn ? 'on' : ''}">${alertMsg}</div>
+        </div>
+      </div>`;
+  }
+
+  // ─── Mise à jour d'une carte individuelle (tick) ─────────
+  function updateSingle(id) {
+    const card = document.querySelector(`.timer-card[data-id="${CSS.escape(id)}"]`);
+    const timer = timers.find(t => t.id === id);
+    if (!card || !timer) return;
+
+    const timeStr = formatTime(timer.elapsed || 0, timer.format || 'auto');
+    const sev = timer.severity || 'normal';
+    const status = timer.status || 'idle';
+    const isClock = timer.mode === 'clock';
+    const alertOn = timer.alertActive && timer.elapsed <= 0 && timer.status === 'running';
+    const textColor = timer.textColor || null;
+
+    card.className = `timer-card ${sev==='warning'?'warn':''} ${sev==='critical'?'crit':''} ${status==='paused'?'paused':''} ${status==='stopped'?'stopped':''} ${alertOn ? 'alert-active' : ''}`;
+    if (textColor) card.style.setProperty('--timer-text-color', textColor);
+    const titleEl = card.querySelector('.timer-title');
+    if (titleEl) titleEl.style.color = textColor || '';
+
+    const valEl = card.querySelector('.timer-value');
+    if (valEl) {
+      valEl.textContent = timeStr;
+      valEl.className = 'timer-value ' + sev;
+      if (textColor) valEl.style.color = textColor;
+    }
+
+    const badge = card.querySelector('.timer-status');
+    if (badge) {
+      badge.textContent = isClock ? 'Horloge' : status;
+      badge.className = 'timer-status ' + (isClock ? 'clock' : status);
+    }
+
+    const alertMsgEl = card.querySelector('.timer-alert-msg');
+    if (alertMsgEl) {
+      if (alertOn) {
+        alertMsgEl.textContent = timer.alertMessage || '⏰ Temps écoulé !';
+        alertMsgEl.classList.add('on');
+      } else {
+        alertMsgEl.classList.remove('on');
+      }
+    }
+
+    const progressBar = card.querySelector('.timer-progress-bar');
+    if (progressBar) {
+      let progressPercent = 0;
+      if (timer.mode === 'countdown' && timer.targetTimestamp && timer.createdAt) {
+        const total = timer.targetTimestamp - timer.createdAt;
+        if (total > 0) {
+          const remaining = timer.elapsed;
+          progressPercent = Math.min(100, Math.max(0, ((total - remaining) / total) * 100));
+        }
+      } else if (timer.mode === 'specific_time' || timer.mode === 'specific_date') {
+        if (timer.targetTimestamp && timer.createdAt) {
+          const total = timer.targetTimestamp - timer.createdAt;
+          if (total > 0) {
+            const remaining = timer.elapsed;
+            progressPercent = Math.min(100, Math.max(0, ((total - remaining) / total) * 100));
+          }
+        }
+      }
+      progressBar.style.width = progressPercent + '%';
+      progressBar.className = 'timer-progress-bar' + (sev === 'warning' ? ' warning' : sev === 'critical' ? ' critical' : '');
+    }
+  }
+
+  // ─── Formatage du temps ──────────────────────────────────
+  function formatTime(ms, fmt) {
+    if (ms < 0) ms = 0;
+    const totalSec = Math.floor(ms / 1000);
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (fmt === 'auto') {
+      if (d > 0) return `${d}j ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if (h > 0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  // ─── Événement du bouton de sortie plein écran ───────────
+  document.getElementById('fullscreen-exit-btn').addEventListener('click', () => {
+    safePostMessage({ type: 'timer-fullscreen-exit' });
+  });
+
+  // ─── Démarrage ────────────────────────────────────────────
+  startClock();
+  render();
+
+  window.addEventListener('beforeunload', () => {
+    if (clockInterval) clearInterval(clockInterval);
+  });
+
+  console.warn('[Projection-Timer] Prêt — canal "' + PROJECTION_CHANNELS.TIMER + '" ✓');
+</script>
+
+</body>
+</html>

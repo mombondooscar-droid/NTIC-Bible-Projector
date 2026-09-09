@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NTIC Bible Projector — Projection Chant</title>
+  <title>NAGAD Bible — Projection Chant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:ital,wght@0,300;0,400;1,300&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wdth,wght@62.5,400&family=Cinzel:wght@700;900&family=Inter:ital,wght@0,300;0,400;1,300&display=swap">
+  <link rel="stylesheet" href="./projection-base.css">
   <style>
     /* ══ VARIABLES & RESET ══════════════════════════════════════════════════ */
     :root {
@@ -17,19 +18,8 @@
       --song-text-align: center;
     }
 
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--song-bg, #000000); }
 
-    html, body {
-      width: 100vw; height: 100vh;
-      overflow: hidden;
-      background: var(--song-bg, #000000);
-    }
-
-    .proj-mode {
-      display: none;
-      width: 100vw; height: 100vh;
-      position: relative;
-    }
     .proj-mode.active { display: flex; }
 
     /* ══ SONG DISPLAY ════════════════════════════════════════════════════ */
@@ -145,6 +135,15 @@
     // ══ Canal dédié — projection-chant ═════════════════════════════════════
     const channel = createProjectionChannel(PROJECTION_CHANNELS.CHANT);
 
+    // ✅ Activation du relais réseau pour cette fenêtre
+    if (typeof initRelayClient === 'function') {
+      initRelayClient((msg) => {
+        if (isValidProjectionMessage(msg)) {
+          channel.onmessage({ data: msg });
+        }
+      });
+    }
+
     // ══ État local ═══════════════════════════════════════════════════════
     let _state = {
       mode: 'blank',
@@ -226,16 +225,6 @@
           }
           break;
 
-        case 'highlight:words':
-          if (msg.selectedText) {
-            highlightProjectionText(document.getElementById('song-lyric-el'), msg.selectedText, msg.color || '#FFD700');
-          }
-          break;
-
-        case 'highlight:clear':
-          if (_state.mode === 'song') _renderSong();
-          break;
-
         case 'hide-lower-third':
           _state.mode = 'blank';
           showProjectionMode(MODE_IDS, 'proj-blank');
@@ -266,7 +255,8 @@
         authorEl.style.display = (_state.song.showAuthor && _state.song.author) ? 'block' : 'none';
       }
       if (lyricEl) {
-        lyricEl.innerHTML = currentLyric.replace(/\n/g, '<br>');
+        // US-REL-04 : Échappement des paroles pour éviter les injections XSS
+        lyricEl.innerHTML = esc(currentLyric).replace(/\n/g, '<br>');
         lyricEl.classList.toggle('song-uppercase', !!_state.song.settings.uppercase);
       }
 

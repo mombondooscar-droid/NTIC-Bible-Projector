@@ -2,6 +2,8 @@
  * ============================================================
  *  store.js — État global centralisé
  *  NTIC Bible Projector · SP-13 US-R07
+ *  + Modes d'affichage enrichis (bilingue simplifié + explicatif)
+ *    — Remplace l'ancien dualMode / dualConfig (alternance)
  *  Dépendances : constants.js (SETTINGS_DEFAULTS)
  *  Scope global (pas de module) — chargé après constants.js
  * ============================================================
@@ -17,16 +19,24 @@ const Store = {
   lastBibleText:       '',     // dernier texte projeté (US-09)
   searchMode:          'text', // 'text' | 'ref'
 
-  // ── Mode bilingue (Demande #6) ──────────────────────────
-  dualMode:            false,                // toggle on/off
-  bibleDataB:          null,                 // seconde version (pour dual-version)
-  dualConfig: {
-    verseA:            null,                 // { ref, text, version }
-    verseB:            null,
-    mode:              'side',               // 'side' | 'alternate'
-    interval:          5,                    // secondes (alternance)
-    intervalActive:    false,
-    intervalTimer:     null,
+  // ── Modes d'affichage enrichis ───────────────────────────
+  // 'normal' | 'bilingual' | 'explanatory' — un seul actif à la fois
+  activeDisplayMode:   'normal',
+
+  // ── Mode bilingue (simplifié — côte à côte, suit la navigation) ──
+  bilingual: {
+    secondVersion:      null,   // nom de la version secondaire (string)
+  },
+
+  // ── Mode explicatif (référence fixe, indépendante de la navigation) ──
+  explanatory: {
+    reference:           '',    // référence saisie (ex: "Jean 3:16")
+    version:              null, // version sélectionnée (string ou null = version principale)
+    text:                 '',   // texte du verset explicatif (rempli automatiquement)
+    book:                 '',   // livre extrait
+    chapter:              '',   // chapitre extrait
+    verse:                '',   // verset extrait
+    ref:                  '',   // référence formatée (ex: "Jean 3:16")
   },
 
   // ── Chants ──────────────────────────────────────────────
@@ -37,10 +47,6 @@ const Store = {
   currentPersonActive: null,   // id personne LT active (US-10)
   lastProjectedPersonNom:   '',   // dernier nom personne LT projeté
   lastProjectedPersonTitre: '',   // dernier titre personne LT projeté
-
-  // ── PIP (aperçu projection — US-11) ─────────────────────
-  pipEnabled:          false,
-  lastProjectionState: { mode: 'blank' },
 
   // ── Paramètres (initialisés depuis SETTINGS_DEFAULTS) ───
   settings: { ...SETTINGS_DEFAULTS },

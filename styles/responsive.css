@@ -94,40 +94,34 @@
   }
 }
 
-/* Tablettes et petits écrans (anciennes règles) */
-/* US-015 : Optimisation mobile ≤ 768px — Hamburger + swipe */
+/* Tablettes et petits écrans — US-015 : Mobile responsive */
+/* Note : hamburger supprimé (US-R20) — tabs toujours visibles en scroll horizontal */
 @media (max-width: 768px) {
-  .hamburger-btn { display: flex !important; }
-
+  /* Navigation : toujours visible, défilement horizontal */
   #main-tabs.tabs {
-    display: none;
-    flex-direction: column;
-    position: fixed;
-    top: 56px;
-    left: 0;
-    right: 0;
-    background: var(--surface, #0f1526);
-    z-index: 200;
-    padding: 8px;
-    border-bottom: 1px solid var(--border, #2a3352);
-    gap: 4px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    display: flex !important;
+    flex-direction: row;
+    position: sticky;
+    top: calc(var(--header-h) + var(--live-bar-h));
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(10, 14, 26, 0.95);
+    border-bottom: 1px solid var(--border);
   }
-
-  #main-tabs.tabs.nav-open {
-    display: flex;
-  }
+  #main-tabs.tabs::-webkit-scrollbar { display: none; }
 
   .tab {
-    width: 100%;
+    min-width: 56px;
     min-height: 52px;
-    justify-content: flex-start;
-    padding: 12px 16px;
-    font-size: 1rem;
-    border-radius: 8px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 0;
+    flex-shrink: 0;
   }
-
-  .tab .tab-label { display: inline !important; }
+  .tab .tab-label { display: inline !important; font-size: 0.62rem; }
 
   .btn { min-height: 44px; }
   .btn-sm {
