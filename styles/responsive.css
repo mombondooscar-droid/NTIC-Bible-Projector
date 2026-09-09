@@ -1,0 +1,205 @@
+/* ============================================================
+   NTIC BIBLE PROJECTOR — styles/responsive.css
+   RESPONSIVE — Toutes les media queries
+   US-R10 — Sprint R3 : extrait de style.css (split modulaire)
+   ============================================================ */
+
+/* ============================================================
+   US-UX02 — RÈGLE R#13 : CTA PRINCIPAL STICKY (MOBILE)
+   ============================================================ */
+@media (max-width: 768px) {
+  .panel-project-action {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    margin-top: 8px;
+  }
+  .panel-project-action .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Responsive : badge dernière référence */
+@media (max-width: 640px) {
+  .last-projected-badge {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.68rem;
+    margin-left: 0;
+    width: auto;
+    white-space: normal;
+    text-align: center;
+  }
+  .bible-toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+/* ============================================================
+   US-35 : MODE MOBILE (≤ 767px)
+   - Cache la grille desktop 3 colonnes
+   - Affiche la navigation par étapes (.bible-mobile-steps)
+   ============================================================ */
+@media (max-width: 767px) {
+  .bible-desktop-grid {
+    display: none;
+  }
+  .bible-mobile-steps {
+    display: block;
+  }
+}
+
+/* Mode paysage / tablettes (480px - 767px) : on garde le même comportement que mobile
+   pour éviter le scroll horizontal et garantir la lisibilité */
+@media (min-width: 480px) and (max-width: 767px) {
+  .bible-desktop-grid {
+    display: none;
+  }
+  .bible-mobile-steps {
+    display: block;
+  }
+  /* Ajustement des polices pour une meilleure lisibilité */
+  .verse-text {
+    font-size: 0.95rem;
+  }
+  .mobile-books-grid,
+  .mobile-chapters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+}
+
+/* Portrait mobile (≤ 480px) */
+@media (max-width: 480px) {
+  .mobile-books-grid,
+  .mobile-chapters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  .mobile-book-btn,
+  .mobile-chapter-btn {
+    font-size: 0.8rem;
+    padding: 8px 4px;
+  }
+  .verse-text {
+    font-size: 0.88rem;
+    padding-left: 20px;
+  }
+  .verse-segments-grid {
+    padding-left: 20px;
+  }
+  .seg-cell {
+    font-size: 0.75rem;
+  }
+}
+
+/* Tablettes et petits écrans — US-015 : Mobile responsive */
+/* Note : hamburger supprimé (US-R20) — tabs toujours visibles en scroll horizontal */
+@media (max-width: 768px) {
+  /* Navigation : toujours visible, défilement horizontal */
+  #main-tabs.tabs {
+    display: flex !important;
+    flex-direction: row;
+    position: sticky;
+    top: calc(var(--header-h) + var(--live-bar-h));
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(10, 14, 26, 0.95);
+    border-bottom: 1px solid var(--border);
+  }
+  #main-tabs.tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    min-width: 56px;
+    min-height: 52px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 0;
+    flex-shrink: 0;
+  }
+  .tab .tab-label { display: inline !important; font-size: 0.62rem; }
+
+  .btn { min-height: 44px; }
+  .btn-sm {
+    min-height: 44px;
+    padding: 0.4rem 0.9rem;
+  }
+
+  .verse-card, .song-card { touch-action: pan-y; }
+
+  .btn:active,
+  .verse-card:active,
+  .song-card:active { transform: scale(0.97); opacity: 0.85; }
+
+  .verse-card { padding: 12px 14px; }
+  .verse-text { font-size: 0.92rem; line-height: 1.7; }
+
+  .lt-preview-frame { height: 15vh; min-height: 80px; }
+
+  #pip-preview {
+    width: min(290px, calc(100vw - 32px));
+    bottom: 72px;
+  }
+}
+
+@media (max-width: 680px) {
+  .header-title  { font-size: 0.78rem; }
+  .header-version { display: none; }
+
+  .bible-nav-grid {
+    /* Ce sélecteur ne cible que la grille desktop, mais elle est cachée à cette largeur */
+    grid-template-columns: 130px 70px 1fr;
+    height: clamp(260px, 52vh, 390px);
+  }
+
+  .verse-text          { font-size: 0.9rem; }
+  .search-result-text  { font-size: 0.88rem; }
+  .seg-cell            { font-size: 0.8rem; }
+
+  .songs-list-col, .song-slides-zone { display: none; }
+  .panel-songs { height: auto; overflow: visible; }
+  .songs-editor-col { overflow: visible; }
+  .song-editor-body { flex-direction: column; overflow: visible; }
+  .song-lyrics-ta  { min-height: 220px; }
+
+  .settings-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 380px) {
+  .tab-label   { display: none; }
+  .tab-icon    { font-size: 1.3rem; }
+  .tab         { min-width: 44px; }
+  header       { padding: 0 10px; }
+  .header-title { font-size: 0.72rem; }
+
+  .bible-nav-grid {
+    grid-template-columns: 108px 56px 1fr;
+    height: clamp(240px, 50vh, 360px);
+  }
+
+  .verse-text          { font-size: 0.88rem; }
+  .nav-item--book      { font-size: 0.65rem; padding: 4px 2px; }
+  .seg-cell            { font-size: 0.76rem; }
+
+  #pip-preview {
+    width: min(260px, calc(100vw - 24px));
+    right: 12px;
+  }
+}
+
+/* Grands écrans */
+@media (min-width: 900px) {
+  .songs-list-col { display: flex; }
+  .song-slides-zone { display: flex; }
+}
+
+/* Règle R#12 : Masquer le label des boutons sur très petit écran */
+@media (max-width: 420px) {
+  .btn-label-text {
+    display: none;
+  }
+}

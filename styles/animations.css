@@ -1,0 +1,211 @@
+/* ============================================================
+   NTIC BIBLE PROJECTOR — styles/animations.css
+   ANIMATIONS — Transitions entre modes, widgets, panneaux
+   Sprint R7 — Animations UI
+   ============================================================ */
+
+/* ────────────────────────────────────────────────────────────
+   FADE TRANSITIONS
+   ──────────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fade-out {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-down {
+  0%   { opacity: 0; transform: translateY(-12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-out-up {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
+
+@keyframes fade-out-down {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(12px); }
+}
+
+/* ────────────────────────────────────────────────────────────
+   SLIDE TRANSITIONS (widgets, panneaux)
+   ──────────────────────────────────────────────────────────── */
+@keyframes slide-in-left {
+  0%   { transform: translateX(-20px); opacity: 0; }
+  100% { transform: translateX(0);     opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  0%   { transform: translateX(20px);  opacity: 0; }
+  100% { transform: translateX(0);     opacity: 1; }
+}
+
+@keyframes slide-out-left {
+  0%   { transform: translateX(0);     opacity: 1; }
+  100% { transform: translateX(-20px); opacity: 0; }
+}
+
+@keyframes slide-out-right {
+  0%   { transform: translateX(0);     opacity: 1; }
+  100% { transform: translateX(20px);  opacity: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   SCALE TRANSITIONS (modales, overlays)
+   ──────────────────────────────────────────────────────────── */
+@keyframes scale-in {
+  0%   { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes scale-out {
+  0%   { transform: scale(1);    opacity: 1; }
+  100% { transform: scale(0.92); opacity: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   CLASSES D'ANIMATION (utilisées par JS)
+   ──────────────────────────────────────────────────────────── */
+.anim-fade-in {
+  animation: fade-in 0.25s ease-out forwards;
+}
+.anim-fade-out {
+  animation: fade-out 0.2s ease-in forwards;
+}
+.anim-fade-in-up {
+  animation: fade-in-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.anim-fade-in-down {
+  animation: fade-in-down 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.anim-fade-out-up {
+  animation: fade-out-up 0.2s ease-in forwards;
+}
+.anim-fade-out-down {
+  animation: fade-out-down 0.2s ease-in forwards;
+}
+.anim-slide-in-left {
+  animation: slide-in-left 0.25s ease-out forwards;
+}
+.anim-slide-in-right {
+  animation: slide-in-right 0.25s ease-out forwards;
+}
+.anim-slide-out-left {
+  animation: slide-out-left 0.2s ease-in forwards;
+}
+.anim-slide-out-right {
+  animation: slide-out-right 0.2s ease-in forwards;
+}
+.anim-scale-in {
+  animation: scale-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.anim-scale-out {
+  animation: scale-out 0.2s ease-in forwards;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TRANSITIONS D'ÉLÉMENTS INDIVIDUELS
+   ──────────────────────────────────────────────────────────── */
+.mode-transition-enter {
+  animation: fade-in-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.mode-transition-exit {
+  animation: fade-out-down 0.2s ease-in forwards;
+}
+
+.widget-transition-enter {
+  animation: slide-in-right 0.25s ease-out forwards;
+}
+
+.widget-transition-exit {
+  animation: slide-out-left 0.2s ease-in forwards;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TRANSITION ENTRE ONGLETS (panneaux)
+   ──────────────────────────────────────────────────────────── */
+.panel-transition-enter {
+  animation: fade-in-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.panel-transition-exit {
+  animation: fade-out-down 0.2s ease-in forwards;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TRANSITION DES RÉSULTATS DE RECHERCHE
+   ──────────────────────────────────────────────────────────── */
+.search-results-enter {
+  animation: fade-in-up 0.25s ease-out forwards;
+}
+
+.search-results-exit {
+  animation: fade-out-down 0.15s ease-in forwards;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TRANSITION DES MODES D'AFFICHAGE (Bible)
+   ──────────────────────────────────────────────────────────── */
+.display-mode-enter {
+  animation: fade-in-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.display-mode-exit {
+  animation: fade-out-down 0.15s ease-in forwards;
+}
+
+/* ────────────────────────────────────────────────────────────
+   UTILITAIRES DE TRANSITION
+   ──────────────────────────────────────────────────────────── */
+.transition-all {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.transition-fast {
+  transition: all 0.15s ease;
+}
+
+.transition-slow {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Désactiver les animations si l'utilisateur préfère réduire les mouvements */
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-in,
+  .anim-fade-out,
+  .anim-fade-in-up,
+  .anim-fade-in-down,
+  .anim-fade-out-up,
+  .anim-fade-out-down,
+  .anim-slide-in-left,
+  .anim-slide-in-right,
+  .anim-slide-out-left,
+  .anim-slide-out-right,
+  .anim-scale-in,
+  .anim-scale-out,
+  .mode-transition-enter,
+  .mode-transition-exit,
+  .widget-transition-enter,
+  .widget-transition-exit,
+  .panel-transition-enter,
+  .panel-transition-exit,
+  .search-results-enter,
+  .search-results-exit,
+  .display-mode-enter,
+  .display-mode-exit {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

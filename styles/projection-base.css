@@ -1,0 +1,34 @@
+/**
+ * ============================================================
+ *  projection-base.css — Réinitialisation commune aux fenêtres
+ *  de projection basées sur le système .proj-mode / .proj-mode.active
+ *  NAGAD Bible · Factorisation (audit frontend-design)
+ *
+ *  Concerne : projection-bible.html, projection-chant.html,
+ *             projection-lt-verset.html, projection-lt-personne.html
+ *
+ *  ⚠ NE PAS inclure dans projection-timer.html : cette fenêtre a une
+ *  structure différente (pas de .proj-mode, un seul écran persistant).
+ * ============================================================
+ */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.proj-mode {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.proj-mode.active { display: block; }
