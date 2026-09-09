@@ -22,8 +22,7 @@ const URLS_TO_CACHE = [
   './offline.html',
   './projection-bible.html',
   './projection-chant.html',
-  './projection-lt-verset.html',
-  './projection-lt-personne.html',
+
   './projection-timer.html',
   './projection-shared.js',
   './projection-base.css',
@@ -51,19 +50,12 @@ const URLS_TO_CACHE = [
   './scripts/panels/timer/timerControls.js',
   './scripts/panels/timerPanel.js',
   './scripts/panels/lowerthird/ltPreview.js',
-  './scripts/panels/lowerthird/ltVerses.js',
+
   './scripts/panels/lowerthird/ltPersons.js',
   './scripts/panels/lowerThirdPanel.js',
-  './scripts/panels/settings/settingsImport.js',
-  './scripts/panels/settings/settingsSong.js',
-  './scripts/panels/settings/settingsLT.js',
-  './scripts/panels/settings/settingsSlide.js',
-  './scripts/panels/settings/settingsDual.js',
-  './scripts/panels/settings/settingsConfigIO.js',
+
   './scripts/panels/settingsPanel.js',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/favicon.ico',
+
 ];
 
 const NAVIGATE_FALLBACK = './offline.html';
