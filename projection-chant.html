@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAGAD Bible — Projection Chant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wdth,wght@62.5,400&family=Cinzel:wght@700;900&family=Inter:ital,wght@0,300;0,400;1,300&display=swap">
+  <link rel="stylesheet" href="./projection-base.css">
+  <style>
+    /* ══ VARIABLES & RESET ══════════════════════════════════════════════════ */
+    :root {
+      --song-bg:   #080810;
+      --song-text: #f5f0e8;
+      --song-font: 'Arial', sans-serif;
+      --song-size: 70px;
+      --song-text-align: center;
+    }
+
+    html, body { background: var(--song-bg, #000000); }
+
+    .proj-mode.active { display: flex; }
+
+    /* ══ SONG DISPLAY ════════════════════════════════════════════════════ */
+    #proj-song {
+      background: var(--song-bg);
+      font-family: var(--song-font);
+      font-size: var(--song-size);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 5vw;
+      text-align: center;
+      line-height: 1.35;
+      color: var(--song-text);
+      background-image: radial-gradient(circle, rgba(74,144,217,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+      position: relative;
+    }
+
+    .song-title  { font-size: .65em; font-weight: 700; margin-bottom: .3em; opacity: .85; letter-spacing: .05em; text-transform: uppercase; }
+    .song-author { font-size: .5em; opacity: .6; margin-bottom: .8em; font-style: italic; }
+    .song-lyric  {
+      font-size: 1em;
+      font-weight: 400;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      max-width: 85vw;
+      hyphens: auto;
+      text-align: var(--song-text-align, center);
+    }
+    /* US-XX : majuscules forcées si settings.uppercase */
+    .song-lyric.song-uppercase { text-transform: uppercase; }
+
+    @keyframes song-fade-in {
+      0%   { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .song-slide-wrap { animation: song-fade-in 300ms ease-out; }
+
+    /* Navigation strophes (points) */
+    #proj-song .segment-nav {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+    #proj-song .seg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    #proj-song .seg-dot.active {
+      background: var(--song-text, #ffffff);
+    }
+
+    /* Indicateur strophe discret (bas droite, disparaît après 2s) */
+    .song-strophe-indicator {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-family: monospace;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .song-strophe-indicator.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ MODE : Blank — fond noir (état par défaut) ══════════════════════ -->
+  <div id="proj-blank" class="proj-mode active">
+    <!-- Intentionnellement vide -->
+  </div>
+
+  <!-- ══ MODE : Song Display ══════════════════════════════════════════════ -->
+  <div id="proj-song" class="proj-mode">
+    <!-- Points de navigation (segments / strophes) -->
+    <div class="segment-nav" id="song-seg-nav"></div>
+    <!-- Indicateur strophe discret -->
+    <div id="song-strophe-indicator" class="song-strophe-indicator">Strophe 1 / 1</div>
+
+    <div class="song-slide-wrap" id="song-slide-wrap">
+      <div class="song-title"  id="song-title-el"  style="display:none;"></div>
+      <div class="song-author" id="song-author-el" style="display:none;"></div>
+      <div class="song-lyric"  id="song-lyric-el"></div>
+    </div>
+  </div>
+
+  <!-- Constantes + utilitaires partagés (autonome) -->
+  <script src="./constants.js"></script>
+  <script src="./projection-shared.js"></script>
+
+  <script>
+    'use strict';
+
+    const MODE_IDS = ['proj-blank', 'proj-song'];
+
+    // ══ Canal dédié — projection-chant ═════════════════════════════════════
+    const channel = createProjectionChannel(PROJECTION_CHANNELS.CHANT);
+
+    // ✅ Activation du relais réseau pour cette fenêtre
+    if (typeof initRelayClient === 'function') {
+      initRelayClient((msg) => {
+        if (isValidProjectionMessage(msg)) {
+          channel.onmessage({ data: msg });
+        }
+      });
+    }
+
+    // ══ État local ═══════════════════════════════════════════════════════
+    let _state = {
+      mode: 'blank',
+      song: {
+        title: '', author: '',
+        showTitle: true, showAuthor: true,
+        strophes: [],
+        currentStrophe: 0,
+        settings: {},
+      },
+    };
+
+    let _indicatorTimer = null;
+
+    // ══ GESTIONNAIRE DE MESSAGES ═══════════════════════════════════════════
+    channel.onmessage = (event) => {
+      const msg = event.data;
+      if (!isValidProjectionMessage(msg)) return;
+
+      switch (msg.type) {
+        case 'show-song':
+          if (msg.data) {
+            _state.mode = 'song';
+            _state.song.title       = msg.data.title || '';
+            _state.song.author      = msg.data.author || '';
+            _state.song.showTitle   = msg.data.showTitle !== undefined ? msg.data.showTitle : true;
+            _state.song.showAuthor  = msg.data.showAuthor !== undefined ? msg.data.showAuthor : true;
+            _state.song.strophes    = msg.data.strophes || [];
+            _state.song.currentStrophe = msg.data.currentIndex || 0;
+
+            if (_state.song.strophes.length === 0 && msg.data.lines) {
+              let lyricText = '';
+              const lines = msg.data.lines || [];
+              const translations = msg.data.translations || [];
+              for (let i = 0; i < lines.length; i++) {
+                lyricText += lines[i];
+                if (translations[i]) lyricText += '\n*' + translations[i];
+                if (i < lines.length - 1) lyricText += '\n';
+              }
+              _state.song.strophes = [lyricText];
+              _state.song.currentStrophe = 0;
+            }
+
+            if (msg.data.settings) {
+              Object.assign(_state.song.settings, msg.data.settings);
+              _applySongStyle(_state.song.settings);
+            }
+            _renderSong();
+          }
+          break;
+
+        case 'song-settings':
+          if (msg.settings) {
+            Object.assign(_state.song.settings, msg.settings);
+            _applySongStyle(_state.song.settings);
+            if (_state.mode === 'song') _renderSong();
+          }
+          break;
+
+        case 'song-next-strophe':
+          if (_state.mode === 'song' && _state.song.strophes.length > 0) {
+            const newIdx = _state.song.currentStrophe + 1;
+            if (newIdx < _state.song.strophes.length) {
+              _state.song.currentStrophe = newIdx;
+              _renderSong();
+              _showStropheIndicator();
+            }
+          }
+          break;
+
+        case 'song-prev-strophe':
+          if (_state.mode === 'song' && _state.song.strophes.length > 0) {
+            const newIdx = _state.song.currentStrophe - 1;
+            if (newIdx >= 0) {
+              _state.song.currentStrophe = newIdx;
+              _renderSong();
+              _showStropheIndicator();
+            }
+          }
+          break;
+
+        case 'hide-lower-third':
+          _state.mode = 'blank';
+          showProjectionMode(MODE_IDS, 'proj-blank');
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    // ══ Rendu Song ══════════════════════════════════════════════════════
+    function _renderSong() {
+      showProjectionMode(MODE_IDS, 'proj-song');
+
+      const titleEl  = document.getElementById('song-title-el');
+      const authorEl = document.getElementById('song-author-el');
+      const lyricEl  = document.getElementById('song-lyric-el');
+      const wrapEl   = document.getElementById('song-slide-wrap');
+
+      const currentLyric = _state.song.strophes[_state.song.currentStrophe] || '';
+
+      if (titleEl) {
+        titleEl.textContent   = _state.song.title || '';
+        titleEl.style.display = (_state.song.showTitle && _state.song.title) ? 'block' : 'none';
+      }
+      if (authorEl) {
+        authorEl.textContent   = _state.song.author || '';
+        authorEl.style.display = (_state.song.showAuthor && _state.song.author) ? 'block' : 'none';
+      }
+      if (lyricEl) {
+        // US-REL-04 : Échappement des paroles pour éviter les injections XSS
+        lyricEl.innerHTML = esc(currentLyric).replace(/\n/g, '<br>');
+        lyricEl.classList.toggle('song-uppercase', !!_state.song.settings.uppercase);
+      }
+
+      // Rejouer l'animation fade-in à chaque changement de slide
+      if (wrapEl) {
+        wrapEl.classList.remove('song-slide-wrap');
+        void wrapEl.offsetWidth;
+        wrapEl.classList.add('song-slide-wrap');
+      }
+
+      // Mettre à jour les points de navigation (segments / strophes)
+      const navContainer = document.getElementById('song-seg-nav');
+      if (navContainer) {
+        navContainer.innerHTML = '';
+        const strophesCount = _state.song.strophes.length;
+        if (strophesCount > 1) {
+          for (let i = 0; i < strophesCount; i++) {
+            const dot = document.createElement('span');
+            dot.className = 'seg-dot';
+            if (i === _state.song.currentStrophe) dot.classList.add('active');
+            dot.addEventListener('click', () => {
+              if (i !== _state.song.currentStrophe) {
+                _state.song.currentStrophe = i;
+                _renderSong();
+                _showStropheIndicator();
+              }
+            });
+            navContainer.appendChild(dot);
+          }
+        }
+      }
+    }
+
+    // Affiche l'indicateur de strophe pendant 2 secondes
+    function _showStropheIndicator() {
+      const indicator = document.getElementById('song-strophe-indicator');
+      if (!indicator) return;
+      const total = _state.song.strophes.length;
+      indicator.textContent = `Strophe ${_state.song.currentStrophe + 1} / ${total}`;
+      indicator.classList.add('visible');
+      if (_indicatorTimer) clearTimeout(_indicatorTimer);
+      _indicatorTimer = setTimeout(() => {
+        indicator.classList.remove('visible');
+      }, 2000);
+    }
+
+    // ══ Application des styles CSS — chant ═════════════════════════════════
+    function _applySongStyle(settings) {
+      if (!settings) return;
+      const r = document.documentElement;
+      if (settings.bgColor) {
+        r.style.setProperty('--song-bg', settings.bgColor);
+        document.body.style.background = settings.bgColor;
+      }
+      if (settings.textColor)  r.style.setProperty('--song-text', settings.textColor);
+      if (settings.fontFamily) r.style.setProperty('--song-font', `'${settings.fontFamily}', sans-serif`);
+      if (settings.fontSize)   r.style.setProperty('--song-size', `${settings.fontSize}px`);
+      if (settings.textAlign)  r.style.setProperty('--song-text-align', settings.textAlign);
+    }
+
+    console.warn('[Projection-Chant] Fenêtre active — canal "' + PROJECTION_CHANNELS.CHANT + '" en écoute ✓');
+  </script>
+</body>
+</html>

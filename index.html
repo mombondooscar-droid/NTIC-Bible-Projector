@@ -1,0 +1,563 @@
+<!-- index.html (version complète avec tiroirs améliorés) -->
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <!-- ══════════════════════════════════════════════════
+       META FONDAMENTAUX
+  ══════════════════════════════════════════════════ -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="NAGAD Bible — Application PWA de projection biblique pour les cultes. Versets, chants, lower thirds. ICC Congo-Brazzaville.">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="color-scheme" content="dark">
+
+  <!-- ══════════════════════════════════════════════════
+       PWA MANIFEST & ICONS
+  ══════════════════════════════════════════════════ -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Favicon multi-format — NAGAD — ICC Brazzaville (pains & poissons) -->
+  <link rel="icon" type="image/x-icon"  href="./icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32"  href="./icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+
+  <!-- iOS / macOS -->
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NAGAD">
+
+  <!-- Windows tiles -->
+  <meta name="msapplication-TileColor" content="#0a0e1a">
+  <meta name="msapplication-TileImage" content="./icons/icon-192.png">
+
+  <!-- ══════════════════════════════════════════════════
+       Open Graph (partage réseaux sociaux)
+  ══════════════════════════════════════════════════ -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="NAGAD Bible">
+  <meta property="og:description" content="NAGAD Bible — Application de projection biblique pour les cultes ICC Brazzaville.">
+  <meta property="og:image"       content="./icons/icon-512.png">
+
+  <!-- ══════════════════════════════════════════════════
+       FEUILLE DE STYLE PRINCIPALE
+  ══════════════════════════════════════════════════ -->
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- ══════════════════════════════════════════════════
+       POLICES GOOGLE FONTS (R#07)
+       Amélioration progressive, fonctionne hors-ligne.
+  ══════════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Poppins:wght@300;400;500;600;700&family=Noto+Serif+Hebrew:wdth,wght@62.5,400&display=swap" rel="stylesheet">
+
+  <title>NAGAD Bible</title>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════
+       OVERLAY DE CHARGEMENT INITIAL (Service Worker)
+       Masqué par app.js une fois l'app prête.
+  ══════════════════════════════════════════════════ -->
+  <div id="sw-loading-overlay" role="status" aria-live="polite" aria-label="Initialisation en cours">
+    <span class="header-logo-mark" style="font-size:48px; display:block; text-align:center;" aria-hidden="true">נ</span>
+    <div class="sw-loading-dots" aria-hidden="true">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <p class="sw-loading-text">Initialisation…</p>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       HEADER — En-tête fixe
+  ══════════════════════════════════════════════════ -->
+  <header role="banner">
+    <div class="header-brand">
+      <span class="header-logo-mark" aria-hidden="true">נ</span>
+      <span class="header-title">NAGAD Bible</span>
+      <span class="header-version" aria-label="Version">v1.0</span>
+    </div>
+
+    <div class="header-right">
+      <span
+        id="status-indicator"
+        class="online"
+        role="status"
+        aria-live="polite"
+        aria-label="Statut réseau : en ligne"
+      >En ligne</span>
+
+      <!-- Bouton Favoris (ouvre la modale) -->
+      <button
+        id="btn-favorites"
+        class="btn btn-ghost btn-icon-only"
+        aria-label="Ouvrir les favoris"
+        title="Favoris (★)"
+      ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+
+      <button
+        id="btn-open-projection"
+        class="btn btn-primary btn-sm"
+        aria-label="Ouvrir la fenêtre de projection"
+        title="Ouvrir la fenêtre de projection (1920×1080)"
+      ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Projection</button>
+
+      <button
+        id="btn-shortcuts"
+        class="btn btn-ghost btn-icon-only"
+        aria-label="Raccourcis clavier"
+        title="Raccourcis clavier (F1)"
+      ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="10" x2="10" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="14" y1="10" x2="14" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="18" y1="10" x2="18" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="7" y1="14" x2="17" y2="14"/></svg></button>
+
+      <button
+        id="btn-about"
+        class="btn btn-ghost btn-icon-only"
+        title="À propos de NAGAD Bible"
+        aria-label="À propos"
+      ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-width="3"/></svg></button>
+    </div>
+  </header>
+
+
+
+  <!-- ══ BARRE STATUT LIVE — état du projecteur visible sur tous les panneaux ══════ -->
+  <div
+    id="live-status-bar"
+    class="live-status-bar live-status--blank"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    aria-label="Statut de projection en direct"
+  >
+    <div class="live-status-left">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span class="live-label" id="live-status-label">Écran vide</span>
+      <span class="live-content" id="live-status-content"></span>
+    </div>
+    <button
+      id="btn-live-clear"
+      class="btn btn-sm live-clear-btn"
+      aria-label="Effacer l'écran de projection (Échap)"
+      title="Effacer l'écran (Échap)"
+    ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg> Vider</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       NAV — Barre d'onglets principale (sans l'onglet Favoris)
+  ══════════════════════════════════════════════════ -->
+  <nav id="main-tabs" class="tabs" role="tablist" aria-label="Navigation principale">
+
+    <button class="tab active" role="tab" aria-selected="true"
+            aria-controls="panel-bible" id="tab-bible" data-tab="bible">
+      <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+      <span class="tab-label">Bible</span>
+    </button>
+
+    <!-- L'onglet Favoris a été retiré -->
+
+    <button class="tab" role="tab" aria-selected="false"
+            aria-controls="panel-songs" id="tab-songs" data-tab="songs">
+      <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+      <span class="tab-label">Chants</span>
+    </button>
+
+    <button class="tab" role="tab" aria-selected="false"
+            aria-controls="panel-lower-third" id="tab-lower-third" data-tab="lower-third">
+      <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span>
+      <span class="tab-label">Intervenants</span>
+    </button>
+
+    <!-- Timer -->
+    <button class="tab tab--secondary" role="tab" aria-selected="false"
+            aria-controls="panel-timer" id="tab-timer" data-tab="timer">
+      <span class="tab-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </span>
+      <span class="tab-label">Timer</span>
+    </button>
+
+    <button class="tab tab--secondary" role="tab" aria-selected="false"
+            aria-controls="panel-settings" id="tab-settings" data-tab="settings">
+      <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="tab-label">Paramètres</span>
+    </button>
+
+  </nav>
+
+
+  <!-- ══════════════════════════════════════════════════
+       MAIN — Zone de contenu dynamique
+  ══════════════════════════════════════════════════ -->
+  <main id="app" role="main" aria-label="Contenu principal">
+    <!-- app.js injecte ici le panneau de l'onglet actif -->
+  </main>
+
+
+  <!-- ══════════════════════════════════════════════════
+       FOOTER — Barre de statut inférieure
+  ══════════════════════════════════════════════════ -->
+  <footer role="contentinfo">
+    <div class="footer-left">
+      <span>© 2026 NAGAD — ICC Brazzaville</span>
+    </div>
+    <div class="footer-right" id="footer-version" aria-label="Informations techniques">
+      PWA · Service Worker
+    </div>
+  </footer>
+
+
+  <!-- ══════════════════════════════════════════════════
+       TOAST — Notification de mise à jour PWA
+  ══════════════════════════════════════════════════ -->
+  <div id="update-toast" class="hidden" role="alert" aria-live="assertive" aria-atomic="true">
+    <span class="toast-text">🔄 Une mise à jour est disponible</span>
+    <div class="toast-actions">
+      <button class="btn btn-primary btn-sm" id="btn-update-now">Mettre à jour</button>
+      <button class="btn btn-ghost btn-sm" id="btn-update-dismiss" aria-label="Ignorer la mise à jour">✕</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       US-40 : MODALE DES RACCOURCIS CLAVIER
+  ══════════════════════════════════════════════════ -->
+  <div id="shortcuts-modal" class="shortcuts-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
+    <div class="modal-card">
+      <h3>⌨️ Raccourcis clavier</h3>
+      <table>
+        <tr><td>→ / ←</td><td>Verset suivant / précédent · Segment suivant / précédent si verset long</td></tr>
+        <tr><td>↓ / ↑</td><td>Verset suivant / précédent dans la liste</td></tr>
+        <tr><td>␣ (Espace)</td><td>Projeter le verset / la strophe sélectionné(e)</td></tr>
+        <tr><td>⎋ (Échap)</td><td>Masquer la projection (mode blank)</td></tr>
+      </table>
+      <button class="close-modal" id="close-shortcuts">Fermer</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MODALE À PROPOS — NAGAD Bible (MODIFIÉE)
+  ══════════════════════════════════════════════════ -->
+  <div id="about-modal" aria-hidden="true" role="dialog" aria-labelledby="about-title" aria-modal="true">
+    <div class="about-card">
+      <button class="about-close" aria-label="Fermer"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+
+      <h2 id="about-title">
+        <img src="./icons/notification-icon-96.png" alt="NAGAD Bible" style="height:32px; width:32px; vertical-align:middle; margin-right:8px; border-radius:4px;">
+        NAGAD Bible
+      </h2>
+      <div class="about-verse">
+        <em>"Rendre Christ plus proche."</em>
+        <cite>— Devise NAGAD · 1 Pierre 4:10</cite>
+      </div>
+
+      <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.6; margin-bottom:0.8rem;">
+        Application de projection biblique gratuite pour les cultes. Projet NAGAD — ICC Brazzaville.
+        Pilotez l'affichage en temps réel sur un projecteur depuis n'importe quel
+        appareil sur le réseau local — smartphone, tablette ou PC.
+        <br><strong style="color:var(--success);">Aucune connexion Internet requise.</strong>
+      </p>
+
+      <ul class="about-feature-list">
+        <li>Projection plein écran des versets (<code>/projection-bible</code>)</li>
+        <li>Lower Third compatible OBS/VMix (<code>/projection-lt-verset</code>)</li>
+        <li>Gestion des chants avec paroles et traduction</li>
+        <li>Plus de 30 versions simultanées (FR, EN, Lingala, Kituba…)</li>
+        <li>Modes bilingue et explicatif pour une double projection</li>
+        <li>Mode diapositive plein écran avec taille de police adaptative</li>
+        <li>Fonctionne hors ligne (PWA — Progressive Web App)</li>
+      </ul>
+
+      <div class="about-contact">
+        <strong>Développeur :</strong> @PetitCHRIST · NAGAD Team<br>
+        <strong>Nom :</strong> MOMBONDO Oscar Junior Splendide<br>
+        <strong>Projet :</strong> NAGAD Bible · ICC Congo-Brazzaville<br>
+        <strong>Email :</strong> mombondooscar@gmail.com<br>
+        <strong>Tél :</strong> +242 068 644 632
+      </div>
+
+      <div class="about-footer-verse">
+        "Betsaleel, Oholiab, et tous les hommes habiles, en qui l'Éternel avait mis de la sagesse
+        et de l'intelligence pour savoir et pour faire, exécutèrent les ouvrages destinés au service
+        du sanctuaire, selon tout ce que l'Éternel avait ordonné."
+        <br><strong>— Exode 38:1</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       NOUVELLE MODALE FAVORIS
+  ══════════════════════════════════════════════════ -->
+  <div id="favorites-modal" class="favorites-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Favoris">
+    <div class="favorites-modal-card">
+      <div class="favorites-modal-header">
+        <h2>⭐ Favoris</h2>
+        <button class="favorites-modal-close" id="favorites-modal-close" aria-label="Fermer les favoris">✕</button>
+      </div>
+      <div class="favorites-modal-body">
+        <!-- Contenu repris de l'ancien panneau favoris -->
+        <div class="favorites-toolbar">
+          <input type="search" id="fav-search" class="fav-search-input"
+                 placeholder="🔍 Rechercher…" aria-label="Rechercher dans les favoris">
+          <div class="favorites-toolbar-right">
+            <select id="fav-label-filter" class="fav-label-select" aria-label="Filtrer par étiquette">
+              <option value="">🏷️ Toutes</option>
+            </select>
+            <button class="btn btn-sm btn-ghost" id="btn-fav-export" aria-label="Exporter les favoris JSON">
+              ⬇️ JSON
+            </button>
+          </div>
+        </div>
+        <div id="fav-list" class="fav-list" aria-live="polite">
+          <!-- Rempli dynamiquement -->
+        </div>
+      </div>
+      <div class="favorites-modal-footer">
+        <button class="btn btn-primary btn-sm" id="btn-fav-project-selected">▶ Projeter</button>
+        <button class="btn btn-ghost btn-sm" id="favorites-modal-cancel">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       TIROIRS LATÉRAUX (DRAWERS) — version améliorée
+  ══════════════════════════════════════════════════ -->
+
+  <!-- Tiroir Gestion des Bibles -->
+  <div id="drawer-bibles" class="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Gestion des Bibles">
+    <div class="drawer-overlay" data-drawer-close></div>
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h2>📚 Gestion des Bibles</h2>
+        <button class="drawer-close" data-drawer-close aria-label="Fermer">✕</button>
+      </div>
+      <div class="drawer-body">
+        <!-- Contenu déplacé de la section Import de Bible -->
+        <div class="settings-section">
+          <p class="settings-hint">Format JSON : <code>{ "Livre": { "1": { "1": "texte…" } } }</code></p>
+
+          <label class="field-label" for="drawer-bible-file-inp">Fichier JSON (.json)</label>
+          <input type="file" id="drawer-bible-file-inp" accept=".json" class="field-file">
+          <div id="drawer-bible-import-msg" aria-live="polite" style="margin-top:6px;font-size:0.85rem;"></div>
+
+          <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px;">
+            <label class="field-label" for="drawer-bible-folder-inp">📂 Dossier de Bibles (sélectionnez le dossier)</label>
+            <input type="file" id="drawer-bible-folder-inp" accept=".json" multiple webkitdirectory class="field-file">
+            <progress id="drawer-bible-folder-progress" max="100" value="0"
+                      style="display:none; width:100%; height:6px; accent-color:var(--primary); margin-top:6px;"></progress>
+            <div id="drawer-bible-folder-msg" aria-live="polite" style="margin-top:6px; font-size:0.85rem;"></div>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">
+              Sélectionnez le dossier contenant vos fichiers <code>.json</code>. Tous les fichiers JSON du dossier seront importés.
+            </div>
+          </div>
+
+          <!-- Synchronisation depuis le serveur -->
+          <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+              <button class="btn btn-primary" id="drawer-btn-sync-bibles-from-server">
+                🔄 Synchroniser toutes les Bibles depuis le serveur
+              </button>
+              <span style="font-size:0.78rem; color:var(--text-muted);">
+                Télécharge et met à jour toutes les Bibles disponibles sur le serveur.
+              </span>
+            </div>
+            <div id="drawer-bible-sync-progress-container" style="display:none; margin-top:10px;">
+              <progress id="drawer-bible-sync-progress" max="100" value="0"
+                        style="width:100%; height:6px; accent-color:var(--primary);"></progress>
+              <div id="drawer-bible-sync-status" style="margin-top:4px; font-size:0.85rem; color:var(--text-muted);">
+                Synchronisation en cours...
+              </div>
+            </div>
+            <div id="drawer-bible-sync-result" style="margin-top:6px; font-size:0.85rem;"></div>
+          </div>
+
+          <!-- Liste des Bibles -->
+          <div class="bible-list" id="drawer-bible-list" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tiroir Réseau et Sauvegarde -->
+  <div id="drawer-network" class="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Réseau et sauvegarde">
+    <div class="drawer-overlay" data-drawer-close></div>
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h2>🌐 Réseau &amp; Sauvegarde</h2>
+        <button class="drawer-close" data-drawer-close aria-label="Fermer">✕</button>
+      </div>
+      <div class="drawer-body">
+        <!-- Mode réseau -->
+        <div class="settings-section">
+          <h3 class="settings-section-title" style="margin-top:0;">🌐 Mode réseau</h3>
+          <p class="settings-hint">
+            Le mode serveur est activé automatiquement lorsque le serveur central est détecté.
+            Toutes les données sont synchronisées avec le serveur.
+          </p>
+          <div style="display:flex; align-items:center; gap:12px; margin:12px 0;">
+            <span class="field-label" style="margin:0;">Statut</span>
+            <span id="drawer-server-mode-status-badge" style="font-weight:bold; padding:4px 12px; border-radius:12px; background:var(--bg-input);">
+              ${App.settings?.serverMode ? '🟢 Connecté au serveur' : '🔴 Mode local (hors ligne)'}
+            </span>
+            <span style="font-size:0.8rem; color:var(--text-muted);">(détection automatique)</span>
+          </div>
+          <div style="margin-top:10px;">
+            <label class="field-label" for="drawer-server-url-input">Adresse du serveur (lecture seule)</label>
+            <input type="url" id="drawer-server-url-input" class="field-input" value="${esc(App.settings?.serverUrl || 'http://localhost:8080')}"
+                   placeholder="http://localhost:8080" style="flex:1;" readonly>
+          </div>
+          <div id="drawer-server-connection-status" style="margin-top:6px; font-size:0.8rem; color:var(--text-muted);">
+            ${App.settings?.serverMode ? '✅ Connecté' : '⏳ En attente de connexion...'}
+          </div>
+        </div>
+
+        <!-- Relais réseau -->
+        <div class="settings-section" id="drawer-section-relay">
+          <h3 class="settings-section-title">📡 Relais réseau (projection)</h3>
+          <p class="settings-hint">
+            Synchronise les projecteurs entre appareils différents (PC, téléphone, tablette) et avec OBS Studio.
+            Nécessite le serveur local <code>server.py</code> (lancez <code>start.bat</code> ou <code>start.sh</code>).
+          </p>
+
+          <div style="display:flex; align-items:center; gap:12px; margin:12px 0;">
+            <label class="field-label" for="drawer-relay-toggle" style="margin:0; flex:1; cursor:pointer;">
+              Activer le relais réseau
+            </label>
+            <label class="toggle-switch" aria-label="Relais réseau actif/inactif">
+              <input type="checkbox" id="drawer-relay-toggle" role="switch" ${App.settings?.relayEnabled !== false ? 'checked' : ''}>
+              <span class="toggle-slider"></span>
+            </label>
+            <span id="drawer-relay-status-badge" style="font-size:0.78rem; font-weight:600; min-width:120px;">—</span>
+          </div>
+
+          <div id="drawer-relay-server-info" style="
+            margin-top:10px; padding:12px 14px;
+            background:var(--bg-card-hover); border-radius:var(--radius-sm);
+            font-size:0.8rem; color:var(--text-muted); line-height:1.7;
+            border:1px solid var(--border-mid);">
+            <div>
+              <strong style="color:var(--text);">Adresse locale :</strong>
+              <code id="drawer-relay-server-ip" style="background:var(--bg-input); padding:1px 6px; border-radius:3px;">
+                localhost
+              </code>
+            </div>
+            <div style="margin-top:6px;">
+              <strong style="color:var(--text);">OBS Browser Source :</strong>
+            </div>
+            <div style="margin-top:2px;">
+              <code id="drawer-relay-obs-url" style="
+                display:block; background:var(--bg-input);
+                padding:4px 8px; border-radius:3px; word-break:break-all;">
+                http://localhost:8080/projection-bible.html
+              </code>
+            </div>
+            <div style="margin-top:8px; font-size:0.72rem;">
+              Remplacez <code>localhost</code> par l'IP ci-dessus pour un accès depuis un autre appareil du réseau.
+            </div>
+          </div>
+
+          <div id="drawer-relay-obs-guide" style="margin-top:10px; font-size:0.78rem; color:var(--text-muted);">
+            <details>
+              <summary style="cursor:pointer; color:var(--primary); font-weight:600;">
+                📺 Guide OBS Studio
+              </summary>
+              <ol style="margin:8px 0 0 16px; line-height:1.8;">
+                <li>Lancer le serveur (double-clic sur <code>start.bat</code>)</li>
+                <li>Ouvrir OBS Studio</li>
+                <li>Ajouter une <strong>Source Navigateur</strong></li>
+                <li>URL : <code>http://localhost:8080/projection-bible.html</code></li>
+                <li>Dimensions : <strong>1920 × 1080</strong></li>
+                <li>Répéter pour <code>projection-chant.html</code>, <code>projection-lt-verset.html</code>, etc.</li>
+              </ol>
+            </details>
+          </div>
+        </div>
+
+        <!-- Sauvegarde et restauration -->
+        <div class="settings-section">
+          <h3 class="settings-section-title">⚙️ Sauvegarde et restauration</h3>
+          <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+            <button class="btn btn-primary" id="drawer-btn-export-all">📤 Exporter tout</button>
+            <button class="btn btn-ghost" id="drawer-btn-import-all">📥 Importer</button>
+            <input type="file" id="drawer-import-all-file" accept=".json" style="display:none;">
+            <button class="btn btn-ghost" id="drawer-btn-export-logs">📄 Exporter les logs</button>
+          </div>
+          <div style="font-size:0.78rem; color:var(--text-muted);">
+            L'export complet inclut : Bibles, Chants, Personnes, Favoris, Paramètres, Timers.<br>
+            Les logs sont exclus (bouton séparé).
+          </div>
+          <div id="drawer-config-status" aria-live="polite" style="margin-top:8px;font-size:0.85rem;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SCRIPTS — Ordre de chargement strict
+  ══════════════════════════════════════════════════ -->
+  <script src="./db.js"></script>
+  <script src="./constants.js"></script>
+  <script src="./store.js"></script>
+  <script src="./scripts/utils/dom.js"></script>
+  <script src="./scripts/utils/dataService.js"></script>
+  <script src="./scripts/utils/bibleHelpers.js"></script>
+  <script src="./scripts/utils/songHelpers.js"></script>
+  <script src="./scripts/utils/bibleNavigation.js"></script>
+  <script src="./scripts/utils/bibleProjection.js"></script>
+  <script src="./scripts/utils/timerManager.js"></script>
+  <!-- Modules Timer -->
+  <script src="./scripts/panels/timer/timerList.js"></script>
+  <script src="./scripts/panels/timer/timerForm.js"></script>
+  <script src="./scripts/panels/timer/timerControls.js"></script>
+  <script src="./scripts/panels/timerPanel.js"></script>
+  <!-- Panels Bible (refactorisés) -->
+  <script src="./scripts/panels/bible/bibleDisplayModes.js"></script>
+  <script src="./scripts/panels/bible/bibleSearch.js"></script>
+  <script src="./scripts/panels/bible/bibleStagingPanel.js"></script>
+  <script src="./scripts/panels/bible/bibleVersionPicker.js"></script>
+  <script src="./scripts/panels/bible/bibleCommonEvents.js"></script>
+  <script src="./scripts/panels/bible/biblePanel.js"></script>
+  <!-- Panels Songs -->
+  <script src="./scripts/panels/songs/songsList.js"></script>
+  <script src="./scripts/panels/songs/songsEditor.js"></script>
+  <script src="./scripts/panels/songs/songsPanel.js"></script>
+  <!-- Panels Favorites (remplacé par la modale) -->
+  <!-- Le fichier favoritesPanel.js n'est plus chargé -->
+  <!-- <script src="./scripts/panels/favoritesPanel.js"></script> -->
+  <script src="./scripts/panels/favoritesModal.js"></script>
+  <!-- Lower Third -->
+  <script src="./scripts/panels/lowerthird/ltPreview.js"></script>
+  <script src="./scripts/panels/lowerthird/ltVerses.js"></script>
+  <script src="./scripts/panels/lowerthird/ltPersons.js"></script>
+  <script src="./scripts/panels/lowerThirdPanel.js"></script>
+  <!-- Panels Settings -->
+  <script src="./scripts/panels/settings/settingsImport.js"></script>
+  <script src="./scripts/panels/settings/settingsSong.js"></script>
+  <script src="./scripts/panels/settings/settingsLT.js"></script>
+  <script src="./scripts/panels/settings/settingsSlide.js"></script>
+  <script src="./scripts/panels/settings/settingsDual.js"></script>
+  <script src="./scripts/panels/settings/settingsConfigIO.js"></script>
+  <script src="./scripts/panels/settingsPanel.js"></script>
+  <script src="./app.js"></script>
+
+</body>
+</html>

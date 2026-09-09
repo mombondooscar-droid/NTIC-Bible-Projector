@@ -1,20 +1,16 @@
+// service-worker.js (version mise à jour)
 /**
  * ============================================================
- *  NTIC BIBLE PROJECTOR — SERVICE WORKER
- *  Version : 1.0.0  |  Cache : bible-projector-v19
+ *  NAGAD BIBLE — SERVICE WORKER
+ *  Version : 1.0.0  |  Cache : nagad-bible-v38
  *  Stratégie : Cache-First → Network Fallback → Offline Page
- *  Mise à jour US-R15 Sprint R4 : ajout de panels/settingsBinders.js
  * ============================================================
  */
 
 // ── Configuration ──────────────────────────────────────────
-const CACHE_VERSION = 'v19'; // incrémenté US-R15 Sprint R4
-const CACHE_NAME    = `bible-projector-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v38';
+const CACHE_NAME    = `nagad-bible-${CACHE_VERSION}`;
 
-/**
- * Assets critiques mis en cache au moment de l'INSTALL.
- * Chemins relatifs au scope du service worker (racine du projet).
- */
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -24,45 +20,53 @@ const URLS_TO_CACHE = [
   './store.js',
   './style.css',
   './offline.html',
-  './projection.html',
-  // ── Demande #5 : fenêtres de projection dédiées ─────────
   './projection-bible.html',
   './projection-chant.html',
-  './projection-lt.html',            // @deprecated — conservé pour rétro-compat
-  // ── Demande #XX : éclatement projection-lt → 2 fenêtres ─
   './projection-lt-verset.html',
   './projection-lt-personne.html',
+  './projection-timer.html',
   './projection-shared.js',
+  './projection-base.css',
   './manifest.json',
-  // ── US-R10 : feuilles de style modulaires ──────────────
   './styles/base.css',
   './styles/components.css',
   './styles/panels.css',
   './styles/responsive.css',
-  // ── Utils ──────────────────────────────────────────────
-  './utils/dom.js',
-  './utils/bibleHelpers.js',
-  './utils/songHelpers.js',
-  './utils/bibleNavigation.js',
-  './utils/bibleProjection.js',
-  // ── Panels ─────────────────────────────────────────────
-  './panels/bibleSearch.js',
-  './panels/bibleDual.js',
-  './panels/biblePanel.js',
-  './panels/songsPanel.js',
-  './panels/favoritesPanel.js',
-  './panels/lowerThirdPanel.js',
-  './panels/settingsBinders.js',    // NOUVEAU US-R15
-  './panels/settingsPanel.js',
-  // ── Icons ──────────────────────────────────────────────
+  './scripts/utils/dom.js',
+  './scripts/utils/dataService.js',
+  './scripts/utils/bibleHelpers.js',
+  './scripts/utils/songHelpers.js',
+  './scripts/utils/bibleNavigation.js',
+  './scripts/utils/bibleProjection.js',
+  './scripts/utils/timerManager.js',
+  './scripts/panels/bible/bibleSearch.js',
+  './scripts/panels/bible/bibleDisplayModes.js',
+  './scripts/panels/bible/biblePanel.js',
+  './scripts/panels/songs/songsList.js',
+  './scripts/panels/songs/songsEditor.js',
+  './scripts/panels/songs/songsPanel.js',
+  './scripts/panels/favoritesModal.js',
+  './scripts/panels/timer/timerList.js',
+  './scripts/panels/timer/timerForm.js',
+  './scripts/panels/timer/timerControls.js',
+  './scripts/panels/timerPanel.js',
+  './scripts/panels/lowerthird/ltPreview.js',
+  './scripts/panels/lowerthird/ltVerses.js',
+  './scripts/panels/lowerthird/ltPersons.js',
+  './scripts/panels/lowerThirdPanel.js',
+  './scripts/panels/settings/settingsImport.js',
+  './scripts/panels/settings/settingsSong.js',
+  './scripts/panels/settings/settingsLT.js',
+  './scripts/panels/settings/settingsSlide.js',
+  './scripts/panels/settings/settingsDual.js',
+  './scripts/panels/settings/settingsConfigIO.js',
+  './scripts/panels/settingsPanel.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/favicon.ico',
 ];
 
-/** Page de fallback HTML pour les navigations hors ligne. */
 const NAVIGATE_FALLBACK = './offline.html';
-
 
 // ── INSTALL ─────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -83,7 +87,6 @@ self.addEventListener('install', (event) => {
       })
   );
 });
-
 
 // ── ACTIVATE ────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
@@ -111,13 +114,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-
 // ── FETCH ────────────────────────────────────────────────────
+const NO_CACHE_PATHS = ['/relay', '/status', '/api/'];
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
   if (request.method !== 'GET') return;
   if (!request.url.startsWith('http')) return;
+
+  try {
+    const url = new URL(request.url);
+    if (NO_CACHE_PATHS.some(p => url.pathname.startsWith(p))) return;
+  } catch(e) { return; }
 
   event.respondWith(
     caches.match(request)
@@ -147,7 +156,6 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
-
 
 // ── MESSAGE ──────────────────────────────────────────────────
 self.addEventListener('message', (event) => {

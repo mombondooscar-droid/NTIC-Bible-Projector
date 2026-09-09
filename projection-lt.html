@@ -1,0 +1,711 @@
+<!-- ============================================================
+     projection-lt.html — Fenêtre de projection unifiée pour les Lower Third (verset ou personne)
+     NTIC Bible Projector · Fusion LT
+     Ce fichier remplace les deux fichiers séparés (projection-lt-verset.html et projection-lt-personne.html)
+     Il écoute les canaux LT_VERSET et LT_PERSONNE ainsi que le message unifié 'show-lt'.
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAGAD Bible — Projection LT (unifié)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wdth,wght@62.5,400&family=Cinzel:wght@700;900&family=Inter:ital,wght@0,300;0,400;1,300&display=swap">
+  <link rel="stylesheet" href="./projection-base.css">
+  <style>
+    /* ── Variables communes aux deux styles ── */
+    :root {
+      --lt-ref-text:   #ffffff;
+      --lt-verse-text: #16308f;
+      --lt-font:       'Arial Black', sans-serif;
+      --lt-width:      1240px;
+      --lt-height:     248px;
+      --lt-ref-size:   30px;
+      --lt-verse-size: 38px;
+      --p-name-size:   30px;
+      --p-title-size:  24px;
+      --tp-green:  #009A44;
+      --tp-yellow: #FBDE4A;
+      --tp-red:    #DC241F;
+    }
+
+    html, body {
+      background: transparent;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Conteneur principal : toujours transparent ── */
+    #proj-lt {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      display: none;
+    }
+    #proj-lt.active {
+      display: block;
+    }
+
+    /* ── Styles pour le verset (identique à projection-lt-verset) ── */
+    .stage { position: absolute; inset: 0; }
+    .lower-third {
+      position: absolute;
+      left: 50%; bottom: 48px;
+      transform: translateX(-50%);
+      width: var(--lt-width);
+      height: var(--lt-height);
+      pointer-events: none;
+    }
+    .reference-badge {
+      position: absolute; left: 0; top: 0;
+      height: 64px; min-width: 240px;
+      padding: 0 36px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 32px;
+      background: linear-gradient(90deg, #0a2f8b 0%, #2347d1 35%, #d6009d 100%);
+      box-shadow: 0 12px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.12) inset, 0 0 28px rgba(255,0,180,.25);
+      z-index: 3;
+    }
+    .reference-badge::after {
+      content: ""; position: absolute; inset: 0; border-radius: 32px;
+      background: linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,0) 60%);
+      pointer-events: none;
+    }
+    .reference-badge span {
+      position: relative; z-index: 1;
+      color: var(--lt-ref-text);
+      font-size: var(--lt-ref-size);
+      font-weight: 900; letter-spacing: 1.8px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+      white-space: nowrap;
+    }
+    .main-card {
+      position: absolute; left: 0; right: 0; top: 34px;
+      height: calc(var(--lt-height) - 34px);
+      border-radius: 40px; background: white; padding: 8px;
+      box-shadow: 0 18px 32px rgba(0,0,0,.28), 0 0 40px rgba(181,19,123,.15);
+    }
+    .main-card::before {
+      content: ""; position: absolute; inset: 0; border-radius: 40px; padding: 8px;
+      background: linear-gradient(135deg, #0a2f8b 0%, #2347d1 35%, #d6009d 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none; z-index: 1;
+    }
+    .card-inner {
+      position: relative; width: 100%; height: 100%;
+      border-radius: 32px;
+      background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(250,250,250,.98));
+      overflow: hidden; z-index: 2;
+    }
+    .card-inner::before {
+      content: ""; position: absolute; inset: 0; border-radius: 32px;
+      background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,0) 45%);
+      pointer-events: none;
+    }
+    .verset-text {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 72px; text-align: center;
+      color: var(--lt-verse-text);
+      font-size: var(--lt-verse-size);
+      font-weight: 900; letter-spacing: 1.5px;
+      text-transform: uppercase; line-height: 1.15;
+      text-shadow: 0 1px 0 rgba(255,255,255,.85), 0 2px 4px rgba(0,0,0,.08);
+      z-index: 1; overflow-y: auto; max-height: 100%; white-space: pre-wrap;
+    }
+    .seg-indicator {
+      position: absolute;
+      bottom: 8px;
+      right: 20px;
+      font-size: 16px;
+      opacity: 0.3;
+      color: var(--lt-verse-text);
+      font-family: var(--lt-font);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── Styles pour la personne (identique à projection-lt-personne) ── */
+    .graduation-person-positioner {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: flex-end;
+      width: 80%;
+      max-width: 1000px;
+    }
+    .grad-left-block {
+      background: #ffffff;
+      height: 120px;
+      flex: 1.25;
+      border-top-right-radius: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-left: 40px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+    .grad-right-block {
+      background: linear-gradient(to right, #0a194e, #4a148c, #b71c1c);
+      height: 120px;
+      flex: 0.75;
+      border-top-left-radius: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-left: 40px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+    .grad-person-name,
+    .grad-person-titre {
+      white-space: normal;
+      word-wrap: break-word;
+      overflow: visible;
+      max-height: 100%;
+      line-height: 1.3;
+    }
+    .grad-person-name {
+      font-size: var(--p-name-size);
+      font-family: var(--lt-font);
+      font-weight: 900;
+      color: #222222;
+      margin: 0;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .grad-person-titre {
+      font-size: var(--p-title-size);
+      font-family: var(--lt-font);
+      font-weight: 600;
+      color: #555555;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .grad-right-block .grad-person-name  { color: #ffffff; }
+    .grad-right-block .grad-person-titre { color: #e0e0e0; font-weight: 400; }
+
+    /* ── Tourpac (commun aux deux) ── */
+    .tourpac-positioner {
+      position: absolute;
+      bottom: 48px; left: 50%;
+      transform: translateX(-50%);
+      display: none;
+    }
+    .lt {
+      position: relative;
+      width: var(--lt-width); height: var(--lt-height);
+      display: flex; align-items: stretch;
+      clip-path: polygon(0% 0%, calc(100% - 24px) 0%, 100% 22px, 100% 100%, 0% 100%);
+      border-radius: 3px 16px 16px 3px;
+      box-shadow: 0 30px 50px -20px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.2);
+      opacity: 0;
+    }
+    .lt-bar {
+      width: 8px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      border-radius: 3px 0 0 3px; overflow: hidden;
+    }
+    .lt-bar span { flex: 1; }
+    .lt-bar span:nth-child(1) { background: var(--tp-green); }
+    .lt-bar span:nth-child(2) { background: var(--tp-yellow); }
+    .lt-bar span:nth-child(3) { background: var(--tp-red); }
+    .lt-body {
+      flex: 1;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      padding: 12px 20px 14px 18px;
+      display: flex; flex-direction: column; gap: 4px;
+      border-radius: 0 14px 14px 0; overflow: hidden; position: relative;
+    }
+    .lt-body::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--tp-green) 0%, var(--tp-yellow) 45%, var(--tp-red) 100%);
+      background-size: 200% 100%;
+      animation: line-flow 4s linear infinite; opacity: 0.8;
+    }
+    @keyframes line-flow {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Animations ── */
+    .lower-third.anim-in  { animation: slideInUp    0.35s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .lower-third.anim-out { animation: slideOutDown 0.28s ease-in forwards; }
+    .lower-third.anim-in  .reference-badge { animation: fadeInScaleLeft  0.3s cubic-bezier(.34,1.56,.64,1) 0.1s both; }
+    .lower-third.anim-out .reference-badge { animation: fadeOutScaleLeft 0.25s ease-in forwards; }
+
+    @keyframes slideInUp    {
+      from { transform: translate(-50%, 100%); opacity: 0; }
+      to   { transform: translate(-50%, 0);    opacity: 1; }
+    }
+    @keyframes slideOutDown {
+      from { transform: translate(-50%, 0);    opacity: 1; }
+      to   { transform: translate(-50%, 100%); opacity: 0; }
+    }
+    @keyframes fadeInScaleLeft  { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes fadeOutScaleLeft { from { transform: scale(1);  opacity: 1; } to { transform: scale(.9); opacity: 0; } }
+
+    .graduation-person-positioner.anim-in {
+      animation: gradPersonSlideIn 0.35s ease-out forwards;
+    }
+    .graduation-person-positioner.anim-out {
+      animation: gradPersonSlideOut 0.28s ease-in forwards;
+    }
+    @keyframes gradPersonSlideIn {
+      from { transform: translate(-50%, 200px); opacity: 0; }
+      to   { transform: translate(-50%, 0);     opacity: 1; }
+    }
+    @keyframes gradPersonSlideOut {
+      from { transform: translate(-50%, 0);     opacity: 1; }
+      to   { transform: translate(-50%, 200px); opacity: 0; }
+    }
+
+    .tourpac-positioner.anim-in .lt {
+      animation: lt-wipe-in 0.35s cubic-bezier(.16,1,.3,1) forwards,
+                 lt-fade-in 0.25s ease forwards;
+    }
+    .tourpac-positioner.anim-out .lt {
+      animation: lt-wipe-out 0.28s ease-in forwards,
+                 lt-fade-out 0.22s ease-in forwards;
+    }
+    @keyframes lt-wipe-in {
+      0%   { clip-path: inset(0 100% 0 0 round 3px 16px 16px 3px); }
+      70%  { clip-path: inset(0 -4%  0 0 round 3px 16px 16px 3px); }
+      100% { clip-path: inset(0 0%   0 0 round 3px 16px 16px 3px); }
+    }
+    @keyframes lt-fade-in  { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: blur(0); } }
+    @keyframes lt-wipe-out {
+      from { clip-path: inset(0 0%   0 0 round 3px 16px 16px 3px); opacity: 1; }
+      to   { clip-path: inset(0 100% 0 0 round 3px 16px 16px 3px); opacity: 0; }
+    }
+    @keyframes lt-fade-out { from { opacity: 1; filter: blur(0); } to { opacity: 0; filter: blur(6px); } }
+
+    .tourpac-positioner.anim-in .lt-l1,
+    .tourpac-positioner.anim-in .lt-name  { animation: text-in 0.28s 0.18s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .tourpac-positioner.anim-in .lt-sep   { animation: sep-in  0.3s  0.28s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .tourpac-positioner.anim-in .lt-l2,
+    .tourpac-positioner.anim-in .lt-title { animation: text-in 0.28s 0.23s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .tourpac-positioner.anim-out .lt-l1,
+    .tourpac-positioner.anim-out .lt-l2,
+    .tourpac-positioner.anim-out .lt-name,
+    .tourpac-positioner.anim-out .lt-sep,
+    .tourpac-positioner.anim-out .lt-title { animation: text-out 0.18s ease-in forwards; }
+    @keyframes text-in  { to { opacity: 1; transform: translateY(0) scaleX(1); } }
+    @keyframes text-out { from { opacity: 1; } to { opacity: 0; transform: translateY(8px); } }
+    @keyframes sep-in   { to { opacity: 1; transform: scaleX(1); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .lower-third, .graduation-person-positioner, .tourpac-positioner,
+      .lower-third .reference-badge, .tourpac-positioner .lt,
+      .tourpac-positioner .lt-l1, .tourpac-positioner .lt-l2,
+      .tourpac-positioner .lt-name, .tourpac-positioner .lt-title {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+
+    /* ── Wrappers ── */
+    #verse-wrapper, #person-wrapper {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #verse-wrapper.active,
+    #person-wrapper.active {
+      display: block;
+    }
+
+    .lt-l1, .lt-l2 {
+      font-family: var(--lt-font);
+    }
+    .lt-l1 {
+      font-weight: 700;
+      font-size: var(--lt-ref-size);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--tp-green);
+      line-height: 1.25;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .lt-l2 {
+      font-weight: 300;
+      font-style: italic;
+      font-size: var(--lt-verse-size);
+      line-height: 1.55;
+      letter-spacing: .02em;
+      opacity: 0;
+      transform: translateY(8px);
+      overflow-y: auto;
+      max-height: 100%;
+      white-space: pre-wrap;
+    }
+    .lt-name {
+      font-weight: 900;
+      font-size: var(--p-name-size);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .lt-title {
+      font-weight: 300;
+      font-style: italic;
+      font-size: var(--p-title-size);
+      letter-spacing: .02em;
+      line-height: 1.4;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .lt-sep {
+      width: 40px; height: 2px; background: var(--tp-green);
+      margin: 6px 0 10px; transform-origin: left;
+      opacity: 0; transform: scaleX(0);
+    }
+    .tourpac-seg-indicator {
+      position: absolute;
+      bottom: 8px;
+      right: 20px;
+      font-size: 14px;
+      opacity: 0.3;
+      color: var(--tp-green);
+      font-family: var(--lt-font, 'Inter', sans-serif);
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ MODE : Blank (transparent) ══════════════════════════ -->
+  <div id="proj-lt" class="proj-mode active"></div>
+
+  <!-- ══ WRAPPER VERSET ═══════════════════════════════════════ -->
+  <div id="verse-wrapper">
+    <!-- Graduation -->
+    <div id="graduation-bible-wrapper" style="display:none;">
+      <div class="stage">
+        <div class="lower-third" id="graduation-lt">
+          <div class="reference-badge"><span id="grad-bible-ref"></span></div>
+          <div class="main-card">
+            <div class="card-inner">
+              <div class="verset-text" id="grad-bible-text"></div>
+            </div>
+          </div>
+          <div class="seg-indicator" id="grad-seg-indicator" style="display:none;">1/1</div>
+        </div>
+      </div>
+    </div>
+    <!-- Tourpac verset -->
+    <div id="tourpac-bible-wrapper" class="tourpac-positioner" style="display:none;">
+      <div class="lt">
+        <div class="lt-bar"><span></span><span></span><span></span></div>
+        <div class="lt-body">
+          <div class="lt-l1" id="tp-bible-ref"></div>
+          <div class="lt-l2" id="tp-bible-text"></div>
+        </div>
+      </div>
+      <div class="tourpac-seg-indicator" id="tp-seg-indicator" style="display:none;">1/1</div>
+    </div>
+  </div>
+
+  <!-- ══ WRAPPER PERSONNE ══════════════════════════════════════ -->
+  <div id="person-wrapper">
+    <!-- Graduation personne -->
+    <div id="graduation-person-wrapper" class="graduation-person-positioner" style="display:none;">
+      <div class="grad-left-block">
+        <p class="grad-person-name"  id="grad-person-nom"></p>
+        <p class="grad-person-titre" id="grad-person-titre-sub"></p>
+      </div>
+      <div class="grad-right-block">
+        <p class="grad-person-name"  id="grad-person-titre"></p>
+      </div>
+    </div>
+    <!-- Tourpac personne -->
+    <div id="tourpac-person-wrapper" class="tourpac-positioner" style="display:none;">
+      <div class="lt" id="tourpac-person-lt">
+        <div class="lt-bar"><span></span><span></span><span></span></div>
+        <div class="lt-body">
+          <div class="lt-name"  id="tp-person-nom"></div>
+          <div class="lt-sep"></div>
+          <div class="lt-title" id="tp-person-titre"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCRIPTS ═══════════════════════════════════════════════ -->
+  <script src="./constants.js"></script>
+  <script src="./projection-shared.js"></script>
+  <script>
+    'use strict';
+
+    // ── Canaux ──
+    const channelVerse = createProjectionChannel(PROJECTION_CHANNELS.LT_VERSET);
+    const channelPerson = createProjectionChannel(PROJECTION_CHANNELS.LT_PERSONNE);
+
+    // ── État ──
+    let _state = {
+      currentType: null, // 'verse' | 'person' | null
+      verse: {
+        reference: '', text: '', segment: '',
+        segments: [], segmentIndex: 0, ltType: 'ictheme',
+        settings: {},
+      },
+      person: {
+        nom: '', titre: '', ltType: 'ictheme',
+        settings: {},
+      },
+    };
+
+    // ── Utilitaires ──
+    function _setText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text || '';
+    }
+
+    function _applyLTCSSVars(settings) {
+      if (!settings) return;
+      const r = document.documentElement;
+      if (settings.refColor)      r.style.setProperty('--lt-ref-text',    settings.refColor);
+      if (settings.verseColor)    r.style.setProperty('--lt-verse-text',  settings.verseColor);
+      if (settings.fontFamily)    r.style.setProperty('--lt-font',        `'${settings.fontFamily}', sans-serif`);
+      if (settings.width)         r.style.setProperty('--lt-width',       `${settings.width}px`);
+      if (settings.height)        r.style.setProperty('--lt-height',      `${settings.height}px`);
+      if (settings.refFontSize)   r.style.setProperty('--lt-ref-size',    `${settings.refFontSize}px`);
+      if (settings.verseFontSize) r.style.setProperty('--lt-verse-size',  `${settings.verseFontSize}px`);
+      if (settings.nameFontSize)  r.style.setProperty('--p-name-size',    `${settings.nameFontSize}px`);
+      if (settings.titleFontSize) r.style.setProperty('--p-title-size',   `${settings.titleFontSize}px`);
+    }
+
+    function _hideAll() {
+      _state.currentType = null;
+      document.getElementById('proj-lt').classList.remove('active');
+      document.getElementById('verse-wrapper').classList.remove('active');
+      document.getElementById('person-wrapper').classList.remove('active');
+      // Désactiver les animations
+      ['graduation-bible-wrapper', 'tourpac-bible-wrapper', 'graduation-person-wrapper', 'tourpac-person-wrapper'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.display = 'none';
+          el.classList.remove('anim-in', 'anim-out');
+        }
+      });
+    }
+
+    // ── Afficher un verset ──
+    function _showVerse(data) {
+      _state.currentType = 'verse';
+      _state.verse.reference = data.reference || '';
+      _state.verse.text = data.text || '';
+      _state.verse.segment = data.text || '';
+      _state.verse.segments = [];
+      _state.verse.segmentIndex = 0;
+      _state.verse.ltType = data.style?.ltType || _state.verse.ltType || 'ictheme';
+      _state.verse.settings = {
+        refColor:      data.style?.refColor      || '#ffffff',
+        verseColor:    data.style?.verseColor    || '#16308f',
+        fontFamily:    data.style?.fontFamily    || 'Arial Black',
+        width:         data.style?.width         || 1240,
+        height:        data.style?.height        || 248,
+        refFontSize:   data.style?.refFontSize   || 30,
+        verseFontSize: data.style?.verseFontSize || 38,
+      };
+      if (data.segmentIndex !== undefined && data.totalSegments !== undefined) {
+        _state.verse.segment = data.text || '';
+        _state.verse.segmentIndex = data.segmentIndex;
+        _state.verse.segments = Array.from({ length: data.totalSegments }, (_, i) => i);
+      }
+      _renderVerse();
+    }
+
+    function _renderVerse() {
+      // Masquer l'autre wrapper
+      document.getElementById('person-wrapper').classList.remove('active');
+      document.getElementById('verse-wrapper').classList.add('active');
+      document.getElementById('proj-lt').classList.add('active');
+
+      const ltType = _state.verse.ltType || 'ictheme';
+      const icWrap = document.getElementById('graduation-bible-wrapper');
+      const tpWrap = document.getElementById('tourpac-bible-wrapper');
+      const ref = _state.verse.reference;
+      const txt = _state.verse.segment || _state.verse.text;
+      const total = _state.verse.segments.length || 1;
+      const current = _state.verse.segmentIndex || 0;
+      const segLabel = `${current + 1}/${total}`;
+
+      _applyLTCSSVars(_state.verse.settings);
+
+      if (icWrap) icWrap.style.display = 'none';
+      if (tpWrap) tpWrap.style.display = 'none';
+
+      if (ltType === 'tourpac') {
+        if (tpWrap) {
+          tpWrap.style.display = 'block';
+          _setText('tp-bible-ref', ref);
+          _setText('tp-bible-text', txt);
+          const indicator = document.getElementById('tp-seg-indicator');
+          if (indicator) {
+            if (total > 1) {
+              indicator.textContent = segLabel;
+              indicator.style.display = 'block';
+            } else {
+              indicator.style.display = 'none';
+            }
+          }
+          triggerProjectionAnim(tpWrap, 'in');
+        }
+      } else {
+        if (icWrap) {
+          icWrap.style.display = 'block';
+          _setText('grad-bible-ref', ref);
+          _setText('grad-bible-text', txt);
+          const indicator = document.getElementById('grad-seg-indicator');
+          if (indicator) {
+            if (total > 1) {
+              indicator.textContent = segLabel;
+              indicator.style.display = 'block';
+            } else {
+              indicator.style.display = 'none';
+            }
+          }
+          triggerProjectionAnim(document.getElementById('graduation-lt'), 'in');
+        }
+      }
+    }
+
+    // ── Afficher une personne ──
+    function _showPerson(data) {
+      _state.currentType = 'person';
+      _state.person.nom = data.nom || '';
+      _state.person.titre = data.titre || '';
+      _state.person.ltType = data.ltType || 'ictheme';
+      _state.person.settings = data.settings || {};
+      _renderPerson();
+    }
+
+    function _renderPerson() {
+      document.getElementById('verse-wrapper').classList.remove('active');
+      document.getElementById('person-wrapper').classList.add('active');
+      document.getElementById('proj-lt').classList.add('active');
+
+      const ltType = _state.person.ltType || 'ictheme';
+      const icWrap = document.getElementById('graduation-person-wrapper');
+      const tpWrap = document.getElementById('tourpac-person-wrapper');
+
+      _applyLTCSSVars(_state.person.settings);
+
+      if (icWrap) icWrap.style.display = 'none';
+      if (tpWrap) tpWrap.style.display = 'none';
+
+      if (ltType === 'tourpac') {
+        if (tpWrap) {
+          tpWrap.style.display = 'block';
+          _setText('tp-person-nom', _state.person.nom);
+          _setText('tp-person-titre', _state.person.titre);
+          triggerProjectionAnim(tpWrap, 'in');
+        }
+      } else {
+        if (icWrap) {
+          icWrap.style.display = 'flex';
+          _setText('grad-person-nom', _state.person.nom);
+          _setText('grad-person-titre', _state.person.titre);
+          _setText('grad-person-titre-sub', '');
+          triggerProjectionAnim(icWrap, 'in');
+        }
+      }
+    }
+
+    // ── Gestion des messages (les deux canaux) ──
+    function handleMessage(msg) {
+      if (!isValidProjectionMessage(msg)) return;
+
+      // Message unifié 'show-lt'
+      if (msg.type === 'show-lt') {
+        if (msg.subtype === 'verse') {
+          _showVerse(msg.data);
+        } else if (msg.subtype === 'person') {
+          _showPerson(msg.data);
+        } else {
+          _hideAll();
+        }
+        return;
+      }
+
+      // Anciens messages
+      switch (msg.type) {
+        case 'show-verse':
+        case 'show-lower-third':
+          if (msg.data) _showVerse(msg.data);
+          break;
+        case 'verse:segment':
+          if (msg.segmentText !== undefined) {
+            const data = {
+              reference: msg.reference || _state.verse.reference,
+              text: msg.segmentText,
+              segmentIndex: msg.segmentIndex || 0,
+              totalSegments: msg.totalSegments || 1,
+              style: msg.style || _state.verse.settings,
+            };
+            _showVerse(data);
+          }
+          break;
+        case 'show-dual-bilingual':
+        case 'show-dual-explanatory':
+          if (msg.data && msg.data.primary) {
+            _showVerse({
+              reference: msg.data.primary.ref,
+              text: msg.data.primary.text,
+              style: _state.verse.settings,
+            });
+          }
+          break;
+        case 'show-person':
+          if (msg.data) _showPerson(msg.data);
+          break;
+        case 'hide-lower-third':
+          _hideAll();
+          break;
+        default:
+          break;
+      }
+    }
+
+    // ── Écoute des deux canaux ──
+    channelVerse.onmessage = (e) => handleMessage(e.data);
+    channelPerson.onmessage = (e) => handleMessage(e.data);
+
+    // ── Relais réseau ──
+    if (typeof initRelayClient === 'function') {
+      initRelayClient((msg) => {
+        if (isValidProjectionMessage(msg)) {
+          handleMessage(msg);
+        }
+      });
+    }
+
+    console.warn('[Projection-LT] Fenêtre unifiée active — écoute les canaux LT_VERSET et LT_PERSONNE ✓');
+  </script>
+</body>
+</html>

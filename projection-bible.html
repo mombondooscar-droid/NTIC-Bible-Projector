@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAGAD Bible — Projection Bible</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wdth,wght@62.5,400&family=Cinzel:wght@700;900&family=Inter:ital,wght@0,300;0,400;1,300&display=swap">
+  <link rel="stylesheet" href="./projection-base.css">
+  <style>
+    :root {
+      --slide-ref-size:    32px;
+      --slide-verse-size:  48px;
+      --slide-ref-color:   #f0c060;
+      --slide-verse-color: #f5f0e8;
+      --slide-font:        'Arial', sans-serif;
+      --slide-text-align:  center;
+      --slide-bg:          #0a0a0a;
+      --dual-primary-ref-color:    #f0c060;
+      --dual-primary-text-color:   #f5f0e8;
+      --dual-primary-font:         'Arial', sans-serif;
+      --dual-primary-ref-size:     32px;
+      --dual-primary-text-size:    48px;
+      --dual-secondary-ref-color:  #00cc66;
+      --dual-secondary-text-color: #d0d8ec;
+      --dual-secondary-font:       'Arial', sans-serif;
+      --dual-secondary-ref-size:   32px;
+      --dual-secondary-text-size:  48px;
+    }
+    html, body { background: var(--slide-bg, #000000); }
+
+    .proj-mode {
+      align-items: center;
+      justify-content: center;
+    }
+    .proj-mode.active { display: flex; }
+
+    .slide-inner {
+      text-align: center;
+      max-width: 900px;
+      width: 100%;
+      border-radius: 24px;
+      padding: 2rem;
+      background: var(--slide-bg, #000000);
+      position: relative;
+    }
+    .slide-ref {
+      font-family: var(--slide-font, 'Arial', sans-serif);
+      font-size: var(--slide-ref-size, 32px);
+      color: var(--slide-ref-color, #f0c060);
+      margin-bottom: 24px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .slide-verse {
+      font-family: var(--slide-font, 'Arial', sans-serif);
+      font-size: var(--slide-verse-size, 48px);
+      color: var(--slide-verse-color, #ffffff);
+      line-height: 1.6;
+      text-align: var(--slide-text-align, center);
+      padding: 0 2rem;
+      max-width: 85%;
+      margin: 0 auto;
+      white-space: pre-wrap;
+    }
+    .segment-nav {
+      position: absolute;
+      left: 50%; bottom: -36px;
+      transform: translateX(-50%);
+      display: flex; gap: 8px; z-index: 10;
+    }
+    .seg-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,.25);
+      transition: background 0.2s;
+    }
+    .seg-dot.active { background: var(--slide-verse-color, #ffffff); }
+    @keyframes proj-fade-in {
+      0%   { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .proj-fade { animation: proj-fade-in 300ms ease-out; }
+
+    /* Mode dual sans box, séparé par une ligne */
+    #proj-dual {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: var(--slide-bg, #000);
+      position: relative;
+    }
+    #proj-dual.active { display: flex; }
+    .dual-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+    .dual-box-primary,
+    .dual-box-secondary {
+      flex: 1;
+      text-align: center;
+      padding: 1.75rem;
+      background: transparent;
+      border: none;
+    }
+    .dual-divider {
+      width: 2px;
+      height: 80%;
+      background: rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+    .dual-ref {
+      margin-bottom: 0.6rem;
+      font-weight: bold;
+    }
+    #dual-ref-primary {
+      font-family: var(--dual-primary-font);
+      font-size: var(--dual-primary-ref-size);
+      color: var(--dual-primary-ref-color);
+    }
+    #dual-text-primary {
+      font-family: var(--dual-primary-font);
+      font-size: var(--dual-primary-text-size);
+      color: var(--dual-primary-text-color);
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    #dual-ref-secondary {
+      font-family: var(--dual-secondary-font);
+      font-size: var(--dual-secondary-ref-size);
+      color: var(--dual-secondary-ref-color);
+    }
+    #dual-text-secondary {
+      font-family: var(--dual-secondary-font);
+      font-size: var(--dual-secondary-text-size);
+      color: var(--dual-secondary-text-color);
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .dual-badge {
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="proj-blank" class="proj-mode active"></div>
+
+  <div id="proj-bible" class="proj-mode">
+    <div class="slide-inner" id="bible-inner">
+      <div id="bible-reference" class="slide-ref"></div>
+      <div id="bible-text" class="slide-verse"></div>
+      <div class="segment-nav" id="bible-seg-nav"></div>
+    </div>
+  </div>
+
+  <div id="proj-slide" class="proj-mode">
+    <div class="slide-inner" id="slide-inner">
+      <div id="slide-reference" class="slide-ref"></div>
+      <div id="slide-text" class="slide-verse"></div>
+    </div>
+  </div>
+
+  <div id="proj-dual" class="proj-mode">
+    <div class="dual-container">
+      <div class="dual-box-primary" id="dual-box-primary">
+        <div id="dual-ref-primary" class="dual-ref"></div>
+        <div id="dual-text-primary"></div>
+      </div>
+      <div class="dual-divider"></div>
+      <div class="dual-box-secondary" id="dual-box-secondary">
+        <div class="dual-badge" id="dual-badge"></div>
+        <div id="dual-ref-secondary" class="dual-ref"></div>
+        <div id="dual-text-secondary"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./constants.js"></script>
+  <script src="./projection-shared.js"></script>
+  <script>
+    'use strict';
+    const MODE_IDS = ['proj-blank', 'proj-bible', 'proj-slide', 'proj-dual'];
+    const channel = createProjectionChannel(PROJECTION_CHANNELS.BIBLE);
+
+    // ✅ Activation du relais réseau pour cette fenêtre
+    if (typeof initRelayClient === 'function') {
+      initRelayClient((msg) => {
+        if (isValidProjectionMessage(msg)) {
+          channel.onmessage({ data: msg });
+        }
+      });
+    }
+
+    let _state = {
+      mode: 'blank',
+      bible: {
+        reference: '', text: '', segment: '',
+        segments: [], segmentIndex: 0,
+      },
+      slide: { reference: '', text: '' },
+      dual: {
+        primary:   { ref: '', text: '', version: '' },
+        secondary: { ref: '', text: '', version: '' },
+        badge:     '',
+      },
+    };
+
+    channel.onmessage = (event) => {
+      const msg = event.data;
+      if (!isValidProjectionMessage(msg)) return;
+      switch (msg.type) {
+        case 'show-verse':
+          if (msg.data) {
+            _state.mode = 'bible';
+            _state.bible.reference   = msg.data.reference || '';
+            _state.bible.text        = msg.data.text || '';
+            _state.bible.segment     = msg.data.text || '';
+            _state.bible.segments    = [];
+            _state.bible.segmentIndex = 0;
+            _applyBibleStyle(msg.data.style || {});
+            _renderBible();
+          }
+          break;
+        case 'verse:segment':
+          if (msg.segmentText !== undefined) {
+            _state.mode = 'bible';
+            if (msg.reference) _state.bible.reference = msg.reference;
+            _state.bible.segment      = msg.segmentText;
+            _state.bible.segmentIndex = msg.segmentIndex || 0;
+            if (msg.totalSegments && msg.totalSegments > 0) {
+              _state.bible.segments = Array.from({ length: msg.totalSegments }, (_, i) => i);
+            }
+            if (msg.style) _applyBibleStyle(msg.style);
+            _renderBible();
+          }
+          break;
+        case 'show-slide':
+          if (msg.data) {
+            _state.mode = 'slide';
+            _state.slide = {
+              reference: msg.data.reference || '',
+              text:      msg.data.text || '',
+            };
+            _applySlideStyle(msg.data.style || {});
+            _renderSlide();
+          }
+          break;
+        case 'slide-settings':
+          if (msg.settings) {
+            _applySlideStyle(msg.settings);
+          }
+          break;
+        case 'show-dual-bilingual':
+          if (msg.data) {
+            _state.mode = 'dual';
+            _state.dual.primary   = msg.data.primary   || { ref: '', text: '', version: '' };
+            _state.dual.secondary = msg.data.secondary || { ref: '', text: '', version: '' };
+            _state.dual.badge     = 'Bilingue';
+            _applyDualStyle(msg.data.style || {});
+            _renderDual();
+          }
+          break;
+        case 'show-dual-explanatory':
+          if (msg.data) {
+            _state.mode = 'dual';
+            _state.dual.primary   = msg.data.primary   || { ref: '', text: '', version: '' };
+            _state.dual.secondary = msg.data.secondary || { ref: '', text: '', version: '' };
+            _state.dual.badge     = 'Explicatif';
+            _applyDualStyle(msg.data.style || {});
+            _renderDual();
+          }
+          break;
+        case 'hide-dual':
+          _state.mode = 'blank';
+          showProjectionMode(MODE_IDS, 'proj-blank');
+          break;
+        case 'hide-lower-third':
+          _state.mode = 'blank';
+          showProjectionMode(MODE_IDS, 'proj-blank');
+          break;
+        default:
+          break;
+      }
+    };
+
+    function _renderBible() {
+      showProjectionMode(MODE_IDS, 'proj-bible');
+      const refEl  = document.getElementById('bible-reference');
+      const textEl = document.getElementById('bible-text');
+      const inner  = document.getElementById('bible-inner');
+      if (refEl)  refEl.textContent  = _state.bible.reference || '';
+      if (textEl) textEl.textContent = _state.bible.segment || _state.bible.text || '';
+      renderProjectionSegNav('bible-seg-nav', _state.bible.segments, _state.bible.segmentIndex);
+      if (inner) {
+        inner.classList.remove('proj-fade');
+        void inner.offsetWidth;
+        inner.classList.add('proj-fade');
+      }
+    }
+
+    function _renderSlide() {
+      showProjectionMode(MODE_IDS, 'proj-slide');
+      const refEl  = document.getElementById('slide-reference');
+      const textEl = document.getElementById('slide-text');
+      const inner  = document.getElementById('slide-inner');
+      if (refEl)  refEl.textContent  = _state.slide.reference || '';
+      if (textEl) textEl.textContent = _state.slide.text || '';
+      if (inner) {
+        inner.classList.remove('proj-fade');
+        void inner.offsetWidth;
+        inner.classList.add('proj-fade');
+      }
+    }
+
+    function _renderDual() {
+      showProjectionMode(MODE_IDS, 'proj-dual');
+      const refP  = document.getElementById('dual-ref-primary');
+      const textP = document.getElementById('dual-text-primary');
+      const refS  = document.getElementById('dual-ref-secondary');
+      const textS = document.getElementById('dual-text-secondary');
+      const badge = document.getElementById('dual-badge');
+      if (refP)  refP.textContent  = _state.dual.primary?.ref  || '';
+      if (textP) textP.textContent = _state.dual.primary?.text || '';
+      if (refS)  refS.textContent  = _state.dual.secondary?.ref  || '';
+      if (textS) textS.textContent = _state.dual.secondary?.text || '';
+      if (badge) badge.textContent = _state.dual.badge || '';
+      const boxP = document.getElementById('dual-box-primary');
+      const boxS = document.getElementById('dual-box-secondary');
+      [boxP, boxS].forEach((box) => {
+        if (!box) return;
+        box.classList.remove('proj-fade');
+        void box.offsetWidth;
+        box.classList.add('proj-fade');
+      });
+    }
+
+    function _applyBibleStyle(style) {
+      const r = document.documentElement;
+      if (style.refColor)      r.style.setProperty('--slide-ref-color',   style.refColor);
+      if (style.verseColor)    r.style.setProperty('--slide-verse-color', style.verseColor);
+      if (style.fontFamily)    r.style.setProperty('--slide-font',        `'${style.fontFamily}', sans-serif`);
+      if (style.refFontSize)   r.style.setProperty('--slide-ref-size',    `${style.refFontSize}px`);
+      if (style.verseFontSize) r.style.setProperty('--slide-verse-size',  `${style.verseFontSize}px`);
+    }
+
+    function _applySlideStyle(style) {
+      const r = document.documentElement;
+      if (style.refSize)    r.style.setProperty('--slide-ref-size',   style.refSize + 'px');
+      if (style.verseSize)  r.style.setProperty('--slide-verse-size', style.verseSize + 'px');
+      if (style.refColor)   r.style.setProperty('--slide-ref-color',  style.refColor);
+      if (style.verseColor) r.style.setProperty('--slide-verse-color', style.verseColor);
+      if (style.font)       r.style.setProperty('--slide-font', `'${style.font}', sans-serif`);
+      if (style.textAlign)  r.style.setProperty('--slide-text-align', style.textAlign);
+      if (style.bg) {
+        r.style.setProperty('--slide-bg', style.bg);
+        document.body.style.background = style.bg;
+      }
+    }
+
+    function _applyDualStyle(style) {
+      if (!style) return;
+      const r = document.documentElement;
+      if (style.primaryRefColor)     r.style.setProperty('--dual-primary-ref-color',    style.primaryRefColor);
+      if (style.primaryTextColor)    r.style.setProperty('--dual-primary-text-color',   style.primaryTextColor);
+      if (style.primaryFontFamily)   r.style.setProperty('--dual-primary-font',         `'${style.primaryFontFamily}', sans-serif`);
+      if (style.primaryRefSize)      r.style.setProperty('--dual-primary-ref-size',     `${style.primaryRefSize}px`);
+      if (style.primaryTextSize)     r.style.setProperty('--dual-primary-text-size',    `${style.primaryTextSize}px`);
+      if (style.secondaryRefColor)   r.style.setProperty('--dual-secondary-ref-color',  style.secondaryRefColor);
+      if (style.secondaryTextColor)  r.style.setProperty('--dual-secondary-text-color', style.secondaryTextColor);
+      if (style.secondaryFontFamily) r.style.setProperty('--dual-secondary-font',       `'${style.secondaryFontFamily}', sans-serif`);
+      if (style.secondaryRefSize)    r.style.setProperty('--dual-secondary-ref-size',   `${style.secondaryRefSize}px`);
+      if (style.secondaryTextSize)   r.style.setProperty('--dual-secondary-text-size',  `${style.secondaryTextSize}px`);
+    }
+    console.warn('[Projection-Bible] Fenêtre active — canal "' + PROJECTION_CHANNELS.BIBLE + '" en écoute ✓');
+  </script>
+</body>
+</html>
