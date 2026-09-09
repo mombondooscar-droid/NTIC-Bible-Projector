@@ -1,13 +1,15 @@
-// app.js v2.0 - NAGAD Bible (Amélioration WebSocket, Front-end fluide, Robustesse)
+// app.js v3.0 - NAGAD Bible (WebSocket v3.0, Solidité améliorée, Front-end optimisé)
 // ============================================================
 // Améliorations :
-// - Intégration du nouveau WSClient robuste
-// - Gestion des erreurs améliorée
-// - Animations CSS plus fluides
-// - Buffer de messages optimisé
-// - Reconnexion intelligente
-// - Heartbeats pour maintenir la connexion
-// - Indicateurs visuels améliorés
+// - Intégration du nouveau WSClient v3.0 avec heartbeats bidirectionnels
+// - Gestion des erreurs robuste avec notifications utilisateur
+// - Animations CSS fluides et optimisées
+// - Buffer de messages avec anti-doublons
+// - Reconnexion automatique avec backoff exponentiel
+// - Heartbeats bidirectionnels pour détection de connexion
+// - Indicateurs visuels améliorés avec feedback en temps réel
+// - Gestion des verrous multi-ressources
+// - Synchronisation automatique des fenêtres de projection
 // ============================================================
 
 // ============================================================
@@ -198,10 +200,10 @@ function releaseLock(resource) {
 }
 
 // ============================================================
-// INDICATEUR VISUEL WEBSOCKET AMÉLIORÉ
+// INDICATEUR VISUEL WEBSOCKET AMÉLIORÉ v3.0
 // ============================================================
 
-function updateRelayIndicator(state) {
+function updateRelayIndicator(state, extraInfo = '') {
   const el = document.getElementById('ws-status');
   if (!el) return;
   
@@ -210,39 +212,54 @@ function updateRelayIndicator(state) {
       text: '\ud83d\udfe2 Relais actif', 
       color: 'var(--success, #28a745)', 
       icon: '\ud83d\udfe2',
-      pulse: false 
+      pulse: false,
+      title: 'Connecté au serveur WebSocket'
     },
     connecting: { 
       text: '\u23f3 Connexion...', 
       color: 'var(--warning, #ffc107)', 
       icon: '\u23f3',
-      pulse: true 
+      pulse: true,
+      title: 'Connexion au serveur en cours'
     },
     disconnected: { 
       text: '\ud83d\udfe1 Relais hors ligne', 
       color: 'var(--danger, #dc3545)', 
       icon: '\ud83d\udfe1',
-      pulse: false 
+      pulse: false,
+      title: 'Déconnecté du serveur WebSocket'
     },
     disabled: { 
       text: '\ud83d\udd34 Relais désactivé', 
       color: 'var(--muted, #6c757d)', 
       icon: '\ud83d\udd34',
-      pulse: false 
+      pulse: false,
+      title: 'Mode local uniquement (relais désactivé)'
     },
     error: { 
       text: '\u274c Erreur de connexion', 
       color: 'var(--danger, #dc3545)', 
       icon: '\u274c',
-      pulse: true 
+      pulse: true,
+      title: 'Erreur de connexion au serveur'
+    },
+    reconnecting: {
+      text: '\u26a0 Reconnexion...',
+      color: 'var(--warning, #ffc107)',
+      icon: '\u26a0',
+      pulse: true,
+      title: 'Tentative de reconnexion au serveur'
     }
   };
   
   const s = STATES[state] || STATES.disconnected;
-  el.textContent = `${s.icon} ${s.text}`;
+  el.textContent = `${s.icon} ${s.text}${extraInfo ? ' (' + extraInfo + ')' : ''}`;
   el.style.color = s.color;
   el.style.animation = s.pulse ? 'pulse 2s infinite' : 'none';
-  el.title = `État du relais réseau: ${s.text}`;
+  el.title = extraInfo ? `${s.title} | ${extraInfo}` : s.title;
+  
+  // Mettre à jour la classe pour le style
+  el.className = 'ws-status-indicator ws-status--' + state;
 }
 
 // ============================================================
@@ -724,22 +741,53 @@ function initUI() {
   });
   
   // Écouteur pour les changements d'état WebSocket
-  WSClient.on('connect', () => {
-    updateRelayIndicator('connected');
-    console.log('[WSClient] Connecté au serveur WebSocket');
+  WSClient.on('connect', (data) => {
+    updateRelayIndicator('connected', data.sessionId ? 'ID: ' + data.sessionId.substring(0, 8) : '');
+    console.log('[WSClient] Connecté au serveur WebSocket', data);
     syncProjectionWindows();
+    
+    // Notifier l'utilisateur
+    if (window.App && window.App.settings && window.App.settings.serverMode) {
+      showToast('\ud83d\udfe2 Connecté au serveur WebSocket', 'success', 2000);
+    }
   });
   
-  WSClient.on('disconnect', () => {
-    updateRelayIndicator(WSClient.state);
-    console.log('[WSClient] Déconnecté du serveur WebSocket');
+  WSClient.on('disconnect', (data) => {
+    const state = WSClient.state;
+    updateRelayIndicator(state);
+    console.log('[WSClient] Déconnecté du serveur WebSocket', data);
+    
+    // Notifier si c'était une connexion active
+    if (window.App && window.App.settings && window.App.settings.serverMode) {
+      showToast('\ud83d\udfe1 Déconnecté du serveur WebSocket', 'warning', 3000);
+    }
   });
   
   WSClient.on('error', (error) => {
-    updateRelayIndicator('error');
+    updateRelayIndicator('error', error.message || '');
     console.error('[WSClient] Erreur:', error);
+    
     if (error.type === 'authentication_failed') {
-      showToast('\u274c Authentification échouée. Vérifiez la clé API.', 'error', 5000);
+      showToast('\u274c Authentification échouée. Vérifiez la clé API dans les paramètres.', 'error', 5000);
+    } else if (error.type === 'websocket_error') {
+      showToast('\u274c Erreur de connexion WebSocket. Vérifiez que le serveur est démarré.', 'error', 5000);
+    } else if (error.type === 'websocket_creation_failed') {
+      showToast('\u26a0 Impossible de créer la connexion WebSocket. Vérifiez l\'URL du serveur.', 'warning', 4000);
+    }
+  });
+  
+  WSClient.on('lockChange', (lockInfo) => {
+    const resource = lockInfo.resource || 'default';
+    _locks[resource] = lockInfo.granted;
+    _lockHolders[resource] = lockInfo.holder;
+    
+    const anyLock = Object.values(_locks).some(v => v === true);
+    enableProjectionButtons(!anyLock || _lockHolders[resource] === TAB_ID);
+    
+    if (lockInfo.granted) {
+      showToast(`\ud83d\udd12 Verrou obtenu pour "${resource}"`, 'success', 2000);
+    } else if (lockInfo.holder) {
+      showToast(`\ud83d\udd12 "${resource}" verrouillé par ${lockInfo.holder}`, 'warning', 2000);
     }
   });
   
@@ -912,6 +960,26 @@ async function init() {
     // Connexion WebSocket
     if (App.settings.relayEnabled !== false) {
       WSClient.connect();
+      
+      // Écouteur pour les changements d'état de connexion
+      const connectionStatusEl = document.getElementById('connection-status');
+      if (connectionStatusEl) {
+        const updateConnectionStatus = () => {
+          const statusText = {
+            connected: '\ud83c\udf10 Connect\u00e9',
+            connecting: '\u23f3 Connexion...',
+            disconnected: '\ud83d\udfe1 D\u00e9connect\u00e9',
+            error: '\u26a0 Erreur',
+            reconnecting: '\u26a0 Reconnexion...'
+          }[WSClient.state] || '\u2753 Inconnu';
+          connectionStatusEl.textContent = statusText;
+          connectionStatusEl.className = 'connection-status connection-status--' + WSClient.state;
+        };
+        
+        WSClient.on('connect', updateConnectionStatus);
+        WSClient.on('disconnect', updateConnectionStatus);
+        updateConnectionStatus();
+      }
     }
 
     // Vérifier la santé du serveur
