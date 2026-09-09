@@ -688,7 +688,7 @@ window.safePostMessageWithLock = function(msg) {
 // ============================================================
 
 function hideLoadingOverlay() {
-  const overlay = document.getElementById('loading-overlay');
+  const overlay = document.getElementById('sw-loading-overlay');
   if (overlay) {
     overlay.style.opacity = '0';
     setTimeout(() => {
@@ -792,7 +792,7 @@ function initUI() {
   });
   
   WSClient.on('stateUpdate', (update) => {
-    console.log('[WSClient] Mise à jour d'état:', update.type);
+    console.log("[WSClient] Mise à jour d'état:", update.type);
     if (update.type === 'full') {
       // Synchroniser l'état local
       if (update.state.lastBibleRef) {
