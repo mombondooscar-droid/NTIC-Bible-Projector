@@ -1,0 +1,770 @@
+/* style.css (version complète avec styles améliorés des tiroirs) */
+/* ============================================================
+   NAGAD BIBLE — style.css
+   US-R10 — Sprint R3 : fichier racine — imports uniquement
+   Ajouts audit ergonomique (M1, M2, M3, M4, M5, M6, T1, T2, T3, PC2, PC3)
+   + US-52 Thème Tourpac clair
+   + Correction thème clair pour header, tabs, footer
+   + Animations UI (Sprint R7)
+   + UX : contraste amélioré pour les états actifs en thème Tourpac
+   + Styles pour la modale Favoris et les tiroirs latéraux améliorés
+   ============================================================ */
+
+@import './styles/base.css';
+@import './styles/components.css';
+@import './styles/panels.css';
+@import './styles/responsive.css';
+@import './styles/animations.css';
+
+/* ═══════════════════════════════════════════════════════════
+   AMÉLIORATIONS AUDIT ERGONOMIQUE (Demande #4)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────
+   M4 : Taille police 16px minimum pour éviter zoom iOS
+   ──────────────────────────────────────────────────────────── */
+input, textarea, select, .field-input, .field-select, .bible-search-input,
+.fav-search-input, .fav-label-input, .song-meta-field, .song-lyrics-ta,
+#lt-new-nom, #lt-new-titre, #lt-impromptu-nom, #lt-impromptu-titre {
+  font-size: 16px !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   M1 : Barre d'onglets hauteur 56px min, labels toujours visibles
+   ──────────────────────────────────────────────────────────── */
+.tab {
+  min-height: 56px;
+}
+.tab .tab-label {
+  display: inline-block !important;
+}
+@media (max-width: 380px) {
+  .tab .tab-label {
+    display: inline-block !important;
+    font-size: 0.7rem;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   M3 : Masquer status-indicator et header-version sur mobile
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  #status-indicator,
+  .header-version {
+    display: none !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   M5 : Cartes favoris min-height 64px + zone tap élargie
+   ──────────────────────────────────────────────────────────── */
+.fav-card {
+  min-height: 64px;
+}
+.fav-card .btn,
+.fav-card .btn-star,
+.fav-card .fav-label-badge {
+  min-height: 44px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   T1 : Navigation 2 colonnes sur tablette (480–768px)
+       Onglets latéraux + main à droite
+   ──────────────────────────────────────────────────────────── */
+@media (min-width: 480px) and (max-width: 768px) {
+  body {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    grid-template-rows: auto var(--live-bar-h) 1fr;
+  }
+  header           { grid-column: 1 / -1; grid-row: 1; }
+  #live-status-bar { grid-column: 1 / -1; grid-row: 2; }
+  #main-tabs.tabs  { grid-column: 1;       grid-row: 3; }
+  #app             { grid-column: 2;       grid-row: 3; }
+  #main-tabs.tabs {
+    position: sticky;
+    top: calc(var(--header-h) + var(--live-bar-h));
+    left: 0;
+    width: 72px;
+    height: calc(100dvh - var(--header-h) - var(--live-bar-h) - var(--footer-h));
+    flex-direction: column;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    display: flex !important;
+  }
+  .tab {
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 64px;
+  }
+  .tab .tab-label {
+    font-size: 0.65rem;
+  }
+  #app {
+    grid-column: 2;
+    padding: 12px;
+    overflow-y: auto;
+  }
+  footer {
+    grid-column: 1 / -1;
+  }
+  .hamburger-btn {
+    display: none !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   T2 : Panneau Bible – grille livres 4 par ligne en tablette landscape
+   ──────────────────────────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  #books-list {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   T3 : PIP preview taille 2× plus grande sur tablette
+   ──────────────────────────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #pip-preview {
+    width: min(640px, calc(100vw - 48px));
+    height: 360px;
+    bottom: 100px;
+    right: 24px;
+  }
+  .pip-content {
+    font-size: clamp(0.9rem, 3vw, 1.2rem);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   PC2 : Focus ring visible sur tous les éléments interactifs
+   ──────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   PC3 : Tooltips (déjà présents, on s'assure que tous les boutons icon-only en ont)
+   → Rien à ajouter, vérification faite dans le JS pour les boutons dynamiques.
+   ──────────────────────────────────────────────────────────── */
+
+/* ============================================================
+   THÈME CLAIR TOURPAC (actif quand data-theme="tourpac")
+   ============================================================ */
+[data-theme="tourpac"] {
+  --bg:          #eef0f4;
+  --bg-card:     #f5f6f8;
+  --text:        #1a1a2e;
+  --text-muted:  #6b7280;
+  --text-dim:    #9ca3af;
+  --primary:     #009A44;
+  --primary-hover: #007a36;
+  --accent:      #CE1126;
+  --accent-hover: #b00e1f;
+  --accent-glow:  rgba(206, 17, 38, 0.25);
+  --danger:      #CE1126;
+  --warning:     #FBDE4A;
+  --success:     #009A44;
+  --border:      rgba(0, 0, 0, 0.12);
+  --border-mid:  rgba(0, 0, 0, 0.22);
+  --bg-card-hover: #e8eaef;
+  --bg-input:    #e9ebef;
+  color-scheme:  light;
+}
+
+/* Overrides spécifiques pour les éléments avec fond RGBA fixe (base.css) */
+[data-theme="tourpac"] header {
+  background: rgba(238, 240, 244, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="tourpac"] .tabs {
+  background: rgba(238, 240, 244, 0.97);
+  backdrop-filter: blur(8px);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="tourpac"] footer {
+  background: rgba(238, 240, 244, 0.97);
+  border-top-color: var(--border);
+}
+
+[data-theme="tourpac"] .header-version {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--text-muted);
+}
+
+[data-theme="tourpac"] #status-indicator.online {
+  background: rgba(0, 154, 68, 0.1);
+  color: var(--success);
+}
+[data-theme="tourpac"] #status-indicator.offline {
+  background: rgba(206, 17, 38, 0.1);
+  color: var(--danger);
+}
+
+[data-theme="tourpac"] .btn-ghost {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--border-mid);
+  color: var(--text);
+}
+[data-theme="tourpac"] .btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="tourpac"] .tab {
+  color: var(--text-muted);
+}
+[data-theme="tourpac"] .tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+[data-theme="tourpac"] .tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text);
+}
+
+[data-theme="tourpac"] #pip-preview {
+  background: #ffffff;
+  border-color: var(--border-mid);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+[data-theme="tourpac"] .pip-header {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-muted);
+}
+[data-theme="tourpac"] .pip-content {
+  color: var(--text);
+}
+
+/* --- Contraste amélioré pour les états actifs en thème Tourpac --- */
+[data-theme="tourpac"] .verse-card.selected-verse,
+[data-theme="tourpac"] .seg-cell.active,
+[data-theme="tourpac"] .strophe-card.active {
+  background: rgba(0, 154, 68, 0.08);
+  border-left: 3px solid var(--primary);
+}
+[data-theme="tourpac"] .seg-cell.active {
+  border-color: var(--primary);
+}
+[data-theme="tourpac"] .strophe-card.active {
+  border-color: var(--primary);
+}
+
+/* ============================================================
+   NOUVEAUX COMPOSANTS UI — Version picker + Segmented control
+   Sprint US-R20 : modernisation interface Bible
+   ============================================================ */
+
+/* ── Version picker custom ─────────────────────────────────── */
+.bible-version-picker {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.bible-version-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.83rem;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 170px;
+  transition: all var(--t-fast);
+}
+.bible-version-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--primary);
+}
+.version-picker-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.version-picker-arrow {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform var(--t-fast);
+  flex-shrink: 0;
+}
+.bible-version-btn[aria-expanded="true"] .version-picker-arrow {
+  transform: rotate(180deg);
+}
+.bible-version-badge {
+  display: inline-block;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.bible-version-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 300;
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  min-width: 200px;
+  max-width: 280px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 6px;
+  display: none;
+  animation: picker-in 0.12s ease-out;
+}
+@keyframes picker-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.bible-version-dropdown.open { display: block; }
+
+.bible-version-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text);
+  transition: background var(--t-fast);
+  min-height: 38px;
+  position: relative;
+}
+.bible-version-option:hover   { background: var(--bg-card-hover); }
+.bible-version-option.active  {
+  background: rgba(35,71,209,0.12);
+  color: var(--primary);
+  font-weight: 600;
+}
+.version-check {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+
+/* ── Segmented control (mode + search toggle) ──────────────── */
+.seg-control {
+  display: inline-flex;
+  background: var(--bg-input);
+  border: 1px solid var(--border-mid);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.seg-control-btn {
+  padding: 5px 13px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  min-height: 30px;
+  letter-spacing: 0.01em;
+}
+.seg-control-btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.25);
+}
+.seg-control-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.07);
+  color: var(--text);
+}
+[data-theme="tourpac"] .seg-control-btn:hover:not(.active) {
+  background: rgba(0,0,0,0.06);
+}
+[data-theme="tourpac"] .seg-control-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Mode toolbar redesigné */
+.display-modes-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.display-mode-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+/* Search bar redesignée */
+.advanced-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.search-input-group {
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Bouton À propos dans header */
+#btn-about {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Modal À propos */
+#about-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-med);
+}
+#about-modal.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.about-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  padding: 2rem;
+  max-width: 520px;
+  width: calc(100vw - 32px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  position: relative;
+}
+.about-card h2 {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  margin-bottom: 0.4rem;
+  color: var(--text);
+}
+.about-verse {
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.about-verse cite { display: block; margin-top: 4px; font-weight: 600; }
+.about-feature-list {
+  list-style: none;
+  margin: 0.8rem 0 1.2rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.about-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.about-feature-list li::before {
+  content: '✓';
+  color: var(--primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.about-contact {
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.83rem;
+  line-height: 1.9;
+  color: var(--text-muted);
+}
+.about-contact strong { color: var(--text); }
+.about-footer-verse {
+  margin-top: 1.2rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.about-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  line-height: 1;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.about-close:hover {
+  color: var(--text);
+  background: var(--bg-card-hover);
+}
+
+/* ── Suppression hamburger sur mobile → tabs toujours visibles ── */
+@media (max-width: 768px) {
+  .hamburger-btn { display: none !important; }
+}
+
+/* ============================================================
+   MODALE FAVORIS
+   ============================================================ */
+.favorites-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: none; /* caché par défaut, affiché en flex via JS */
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+  animation: scale-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.favorites-modal[aria-hidden="false"] {
+  display: flex;
+}
+.favorites-modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+}
+.favorites-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.favorites-modal-header h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+}
+.favorites-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+}
+.favorites-modal-close:hover {
+  color: var(--text);
+}
+.favorites-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+}
+.favorites-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card-hover);
+}
+
+/* Responsive pour la modale */
+@media (max-width: 600px) {
+  .favorites-modal-card {
+    max-height: 95vh;
+  }
+  .favorites-modal-body {
+    padding: 0.5rem 1rem;
+  }
+  .favorites-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .favorites-toolbar-right {
+    justify-content: flex-end;
+  }
+}
+
+/* ============================================================
+   TIROIRS LATÉRAUX (DRAWERS) — VERSION AMÉLIORÉE
+   ============================================================ */
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20000;
+  display: none; /* caché par défaut */
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+.drawer[aria-hidden="false"] {
+  display: flex;
+}
+.drawer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+  animation: overlay-fade-in 0.25s ease;
+}
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.drawer-content {
+  position: relative;
+  width: min(450px, 100vw);
+  max-width: 100%;
+  height: 100vh;
+  background: var(--bg-card);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  animation: slide-in-right 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-card);
+}
+.drawer-header h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  color: var(--text);
+}
+.drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+.drawer-close:hover {
+  color: var(--text);
+  transform: rotate(90deg);
+}
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+.drawer-body .settings-section {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+}
+.drawer-body .settings-section:last-child {
+  margin-bottom: 0;
+}
+.drawer-body .settings-section-title {
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Responsive tiroirs */
+@media (max-width: 480px) {
+  .drawer-content {
+    width: 100vw;
+  }
+  .drawer-header {
+    padding: 1rem;
+  }
+  .drawer-body {
+    padding: 1rem;
+  }
+}
